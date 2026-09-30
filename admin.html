@@ -286,7 +286,9 @@ function errorView(e){
         h("li", { text: "The latest security rules from the README must be published (they need isAdmin, learners and config)." })),
       h("p", { class: "mute", text: "Signed in as " + (me ? me.email : "unknown") + ". Your UID:" }),
       uidBox,
-      h("div", { class: "row" }, copy, logoutButton("btn quiet sm")));
+      h("div", { class: "row" }, copy,
+        h("a", { class: "btn ghost sm", href: "./" }, "Back to the classroom"),
+        logoutButton("btn quiet sm")));
   } else {
     card.append(h("div", { class: "empty" },
       h("div", { class: "em", text: "⚡" }),
@@ -468,8 +470,10 @@ function kpi(value, label, sub, tone){
 
 function barChart(data){
   const W = 100 * data.length + 40, H = 210, pad = 30, bw = 52, gap = 100 - bw;
-  const g = s("svg", { class: "chart", viewBox: "0 0 " + W + " " + H, preserveAspectRatio: "none",
-    style: "height:210px", role: "img", "aria-label": "Average score per quiz" });
+  // Fixed pixel size inside a horizontally scrolling box: text and bars never distort.
+  const g = s("svg", { class: "chart", viewBox: "0 0 " + W + " " + H, width: W, height: H,
+    style: "height:" + H + "px;width:" + W + "px;max-width:none",
+    role: "img", "aria-label": "Average score per quiz" });
   [0, 25, 50, 75, 100].forEach(v => {
     const y = H - pad - (v / 100) * (H - pad - 18);
     g.append(s("line", { class: "gridline", x1: 26, y1: y, x2: W, y2: y, "stroke-dasharray": v ? "3 5" : "" }));
@@ -489,14 +493,15 @@ function barChart(data){
 }
 
 function sparkline(days){
-  const W = 640, H = 120, pad = 22;
+  const W = 640, H = 160, pad = 24;
   const max = Math.max(1, ...days.map(d => d.value));
   const step = (W - pad * 2) / (days.length - 1);
   const pt = i => [pad + i * step, H - pad - (days[i].value / max) * (H - pad * 2)];
   const line = days.map((_, i) => pt(i).map(n => n.toFixed(1)).join(",")).join(" ");
   const area = "M" + pad + "," + (H - pad) + " L" + line.split(" ").join(" L") + " L" + (W - pad) + "," + (H - pad) + " Z";
-  const g = s("svg", { class: "chart", viewBox: "0 0 " + W + " " + H, style: "height:120px;width:100%",
-    preserveAspectRatio: "none", role: "img", "aria-label": "Quiz attempts over the last 14 days" });
+  // Scales proportionally with the card, so the dots stay round on every screen.
+  const g = s("svg", { class: "chart", viewBox: "0 0 " + W + " " + H, style: "width:100%;height:auto",
+    role: "img", "aria-label": "Quiz attempts over the last 14 days" });
   const grad = s("linearGradient", { id: "spark", x1: 0, y1: 0, x2: 0, y2: 1 });
   grad.append(s("stop", { offset: "0%", "stop-color": "#2aa374", "stop-opacity": .38 }));
   grad.append(s("stop", { offset: "100%", "stop-color": "#2aa374", "stop-opacity": 0 }));
@@ -607,7 +612,9 @@ function learnersView(){
 
 /* ---------- learner detail sheet ---------- */
 function openLearner(id){
-  const p = DATA.people[id];
+  // A result can reference a uid with no learners/users document (they took a quiz
+  // before finishing onboarding, or their profile is not readable). Never crash on it.
+  const p = DATA.people[id] || { uid: id, name: "", email: "", phone: "", lessons: 0, orphan: true };
   const { perLearner, avgFor } = derive();
   const attempts = (perLearner[id] || []).slice().sort((a, b) => b.at - a.at);
   const lessons = pctOf(p.lessons, TOTAL_LESSONS);
@@ -619,9 +626,13 @@ function openLearner(id){
       h("div", { class: "row row-tight", style: "flex-wrap:nowrap" },
         h("span", { class: "avatar lg", text: initials(p.name || p.email) }),
         h("div", null,
-          h("h2", { style: "font-size:19px", text: p.name || "Unnamed learner" }),
-          h("div", { class: "mute", text: p.email || p.phone || "" }))),
+          h("h2", { style: "font-size:19px", text: p.name || (p.orphan ? "Unknown learner" : "Unnamed learner") }),
+          h("div", { class: "mute", text: p.email || p.phone || (p.orphan ? "No profile on record" : "") }))),
       h("button", { class: "icon-btn", onclick: close, "aria-label": "Close" }, "✕")),
+
+    p.orphan ? h("div", { class: "callout warn" }, h("div", null,
+      h("b", { text: "No profile for this account. " }),
+      "They submitted a quiz but have not completed onboarding, so there is no name or phone yet.")) : null,
 
     h("div", { class: "grid g2" },
       h("div", { class: "kpi" }, h("b", { text: lessons + "%" }), h("span", { text: "Lessons complete" }),
