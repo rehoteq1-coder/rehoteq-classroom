@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rehoteq Classroom</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b5d3b">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#f6f8f7;--card:#fff;--ink:#1b1f23;--mute:#5b6470;--green:#0b5d3b;--gold:#c8961e;--soft:#eaf3ee;--line:#d9e2dc;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101613;--card:#18211c;--ink:#e8efe9;--mute:#9aa7a0;--green:#3cb27a;--soft:#1e2b24;--line:#2b3a32}}
+:root[data-theme="dark"]{--bg:#101613;--card:#18211c;--ink:#e8efe9;--mute:#9aa7a0;--green:#3cb27a;--soft:#1e2b24;--line:#2b3a32}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5}
+.wrap{max-width:640px;margin:0 auto;padding:16px}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.brand{font-weight:800;color:var(--green);font-size:18px}
+.brand small{display:block;font-weight:500;color:var(--mute);font-size:11px;letter-spacing:.5px}
+.pill{font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;background:var(--soft);color:var(--green);border:1px solid var(--line)}
+.pill.off{background:#fff3d6;color:#7a5a00;border-color:var(--gold)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.bar{height:10px;background:var(--soft);border-radius:99px;overflow:hidden;margin:8px 0}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--green),var(--gold));width:0;transition:width .3s}
+h1{font-size:20px;margin:0 0 4px}h2{font-size:15px;margin:0 0 8px;color:var(--green)}h3{font-size:14px;margin:14px 0 6px;color:var(--gold)}
+.mute{color:var(--mute);font-size:13px}
+button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px 14px;cursor:pointer;background:var(--green);color:#fff;min-height:44px}
+button.alt{background:var(--soft);color:var(--green);border:1px solid var(--line)}
+button.done{background:var(--gold);color:#1b1f23}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}
+.item{display:flex;align-items:center;gap:10px;padding:12px 4px;border-top:1px solid var(--line);cursor:pointer}
+.item:first-of-type{border-top:0}
+.dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:13px;color:#fff;flex:none}
+.dot.ok{background:var(--green);border-color:var(--green)}
+ul,ol{padding-left:20px;margin:6px 0}li{margin:5px 0}
+.note{font-size:12px;color:var(--mute);text-align:center;margin-top:14px}
+.inp{width:100%;padding:12px;margin:4px 0;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="brand">Rehoteq Classroom<small>BEGINNER TRACK &middot; V2</small></div>
+  <span id="net" class="pill">Online</span>
+</header>
+<main id="app"></main>
+<p class="note">Progress is saved on this device first. Built for weak networks.</p>
+</div>
+<script>
+var LESSONS=[
+{m:"B1 Digital foundations",t:"Inside the computer",pts:["CPU is the brain. RAM is short-term memory and is cleared when power goes off. Storage (HDD or SSD) keeps files long-term.","The operating system manages the hardware and runs your apps.","A computer feels slow when RAM is small, storage is almost full, too many apps start at boot, or malware is present."],lab:["Open Settings, About, and write down your processor, RAM and OS.","Open Task Manager (Ctrl + Shift + Esc) and look at Startup.","Disable two startup apps you do not need."]},
+{m:"B1 Digital foundations",t:"Files, folders and backup",pts:["Name files in lowercase with hyphens and put the date first when order matters, for example result-jss1-2026-09-28.xlsx.","3-2-1 backup: keep 3 copies, on 2 types of storage, with 1 copy away from your computer.","Shortcuts: Ctrl+C copy, Ctrl+V paste, Ctrl+Z undo, Ctrl+S save."],lab:["Create the folder Rehoteq-Academy with sub-folders for each module.","Copy it to a flash drive and to Google Drive.","Delete one file and restore it from your backup."]},
+{m:"B1 Digital foundations",t:"How websites work",pts:["Your browser asks DNS for the server address, then the server sends HTML, CSS, JavaScript and images.","HTTPS means the connection is encrypted. It does not prove a site is honest.","Big pages fail more often on weak networks, so we build small."],lab:["Open Chrome DevTools (F12) and the Network tab.","Reload a page and write the requests and total size.","Set throttling to Slow 3G and reload again."]},
+{m:"B2 HTML and CSS",t:"HTML structure",pts:["Elements use tags. Attributes add detail. Every page has a doctype, head and body.","Use one h1 per page, lists for lists, and alt text on every image.","Semantic tags (header, main, section, footer) explain the page."],lab:["Create index.html with a header, an about section and a footer.","Add one image under 150 KB with alt text.","Add a contact form with labels."]},
+{m:"B2 HTML and CSS",t:"CSS layout",pts:["The box model, inside to outside: content, padding, border, margin.","Flexbox lines items up. Grid makes rows and columns.","repeat(auto-fit, minmax(220px, 1fr)) makes cards wrap on any screen."],lab:["Build a school landing page with a hero and three cards.","Resize the window and fix any overflow.","Change colours and fonts to suit your school."]},
+{m:"B2 HTML and CSS",t:"Mobile-first and speed",pts:["Design for the phone first, then enlarge with min-width media queries.","Resize and compress images. Target: under 300 KB per page.","Test on throttled Slow 3G before you share your link."],lab:["Measure your page size in the Network tab.","Compress the largest images and measure again.","Write the before and after sizes in your notebook."]}
+];
+var K="rc-done",L="rc-last",app=document.getElementById("app"),net=document.getElementById("net");
+function get(k,d){try{var v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}}
+function set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+var done=get(K,[]),last=get(L,0),stamp=get(K+"-t",0),dirty=get(K+"-d",false),user=null,fb=null,syncMsg="",view="home",authReady=false,fbFail=false;
+/* ===== PASTE YOUR FIREBASE WEB CONFIG HERE (see README) ===== */
+var FIREBASE_CONFIG={apiKey:"AIzaSyAZ12xbUzdzc_5L5JY6d3AlIvPxLKB60TA",authDomain:"rehoteq-classroom.firebaseapp.com",projectId:"rehoteq-classroom",appId:"1:773863865025:web:8b11f1cd911e9cf05b3240"};
+var FBV="10.12.2",CONFIGURED=FIREBASE_CONFIG.apiKey.indexOf("PASTE")!==0;
+function render(){view==="home"?home():open(view)}
+function save(){stamp=Date.now();dirty=true;set(K,done);set(K+"-t",stamp);set(K+"-d",true);sync()}
+function say(m){syncMsg=m;var e=document.getElementById("sync");if(e)e.textContent=m}
+function sync(){
+  if(!fb||!user)return;
+  if(!navigator.onLine){say(dirty?"Saved on phone. Will sync when online.":"");return}
+  say("Syncing...");
+  var ref=fb.doc(fb.db,"users",user.uid);
+  var slow=new Promise(function(_,r){setTimeout(function(){r(new Error("slow"))},15000)});
+  Promise.race([fb.getDoc(ref),slow]).then(function(snap){
+    var c=snap.exists()?snap.data():null;
+    if(c&&c.updatedAt>stamp){done=c.done||[];stamp=c.updatedAt;dirty=false;set(K,done);set(K+"-t",stamp);set(K+"-d",false);render()}
+    else if(dirty||!c){return Promise.race([fb.setDoc(ref,{done:done,updatedAt:stamp,email:user.email||""}),slow]).then(function(){dirty=false;set(K+"-d",false)})}
+  }).then(function(){say("Saved online")}).catch(function(){say("Saved on phone. Will retry.")});
+}
+function nice(e){var m={"auth/invalid-credential":"Wrong email or password.","auth/wrong-password":"Wrong email or password.","auth/user-not-found":"No account with that email. Tap Sign up.","auth/email-already-in-use":"That email already has an account. Tap Log in.","auth/weak-password":"Use at least 6 characters.","auth/invalid-email":"Check the email address.","auth/network-request-failed":"No network. Try again when you have signal.","auth/too-many-requests":"Too many tries. Wait a few minutes."};return m[e.code]||"Something went wrong. Try again."}
+function account(){
+  var c=el("div","card");c.appendChild(el("h2","","Account"));
+  if(!CONFIGURED){c.appendChild(el("div","mute","Login is not set up yet. You can still learn; progress saves on this device."));return c}
+  if(!fb||!authReady){c.appendChild(el("div","mute",fbFail?"Login needs internet the first time. You can keep learning offline.":"Checking login..."));return c}
+  if(user){
+    var d=el("div","","Signed in as <strong></strong>");d.querySelector("strong").textContent=user.email;c.appendChild(d);
+    var s=el("div","mute");s.id="sync";s.textContent=syncMsg;c.appendChild(s);
+    var o=el("button","alt","Log out");o.style.marginTop="8px";o.onclick=function(){fb.signOut(fb.auth)};c.appendChild(o);return c}
+  c.appendChild(el("div","mute","Log in to save your progress online and use it on any device."));
+  var em=el("input","inp");em.type="email";em.placeholder="Email";em.autocomplete="email";
+  var pw=el("input","inp");pw.type="password";pw.placeholder="Password (6+ characters)";pw.autocomplete="current-password";
+  var msg=el("div","mute");msg.style.margin="6px 0";
+  function run(fn){msg.textContent="Please wait...";fn().catch(function(e){msg.textContent=nice(e)})}
+  var row=el("div","row"),li=el("button","","Log in"),su=el("button","alt","Sign up"),rs=el("button","alt","Forgot password");
+  li.onclick=function(){run(function(){return fb.signIn(fb.auth,em.value.trim(),pw.value)})};
+  su.onclick=function(){run(function(){return fb.signUp(fb.auth,em.value.trim(),pw.value)})};
+  rs.onclick=function(){run(function(){return fb.reset(fb.auth,em.value.trim()).then(function(){msg.textContent="Reset email sent. Check your inbox."})})};
+  row.appendChild(li);row.appendChild(su);rs.style.marginTop="8px";rs.style.width="100%";
+  [em,pw,msg,row,rs].forEach(function(n){c.appendChild(n)});return c}
+function boot(){
+  if(!CONFIGURED)return;
+  var b="https://www.gstatic.com/firebasejs/"+FBV+"/";
+  Promise.all([import(b+"firebase-app.js"),import(b+"firebase-auth.js"),import(b+"firebase-firestore.js")]).then(function(m){
+    var a=m[0].initializeApp(FIREBASE_CONFIG),au=m[1].getAuth(a);
+    fb={auth:au,db:m[2].getFirestore(a),doc:m[2].doc,getDoc:m[2].getDoc,setDoc:m[2].setDoc,signIn:m[1].signInWithEmailAndPassword,signUp:m[1].createUserWithEmailAndPassword,signOut:m[1].signOut,reset:m[1].sendPasswordResetEmail};
+    m[1].onAuthStateChanged(au,function(u){user=u;authReady=true;if(u)sync();render()});
+  }).catch(function(){fbFail=true;render()});
+}
+function pct(){return Math.round(done.length/LESSONS.length*100)}
+function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!==undefined)e.innerHTML=h;return e}
+function home(){
+  view="home";app.innerHTML="";
+  var c=el("div","card");c.appendChild(el("h1","","Welcome back"));
+  c.appendChild(el("div","mute",done.length+" of "+LESSONS.length+" lessons complete"));
+  var b=el("div","bar");b.appendChild(el("i"));b.firstChild.style.width=pct()+"%";c.appendChild(b);
+  var nxt=LESSONS.findIndex(function(_,i){return done.indexOf(i)<0});
+  var go=el("button","",done.length===LESSONS.length?"Review lessons":(done.length?"Continue: "+LESSONS[nxt<0?0:nxt].t:"Start learning"));
+  go.onclick=function(){open(done.length===LESSONS.length?0:(nxt<0?last:nxt))};c.appendChild(go);app.appendChild(c);app.appendChild(account());
+  var mod="",card=null;
+  LESSONS.forEach(function(l,i){
+    if(l.m!==mod){mod=l.m;card=el("div","card");card.appendChild(el("h2","",mod));app.appendChild(card)}
+    var it=el("div","item"),d=el("span","dot"+(done.indexOf(i)>=0?" ok":""),done.indexOf(i)>=0?"&#10003;":"");
+    var t=el("div","","<strong>"+(i+1)+". "+l.t+"</strong>");it.appendChild(d);it.appendChild(t);
+    it.onclick=function(){open(i)};card.appendChild(it)});
+}
+function open(i){
+  last=i;view=i;set(L,i);var l=LESSONS[i];app.innerHTML="";window.scrollTo(0,0);
+  var c=el("div","card");c.appendChild(el("div","mute",l.m+" &middot; Lesson "+(i+1)+" of "+LESSONS.length));c.appendChild(el("h1","",l.t));
+  c.appendChild(el("h3","","Key ideas"));var u=el("ul");l.pts.forEach(function(p){u.appendChild(el("li","",p))});c.appendChild(u);
+  c.appendChild(el("h3","","Lab"));var o=el("ol");l.lab.forEach(function(p){o.appendChild(el("li","",p))});c.appendChild(o);app.appendChild(c);
+  var isDone=done.indexOf(i)>=0,m=el("button",isDone?"done":"",isDone?"Completed (tap to undo)":"Mark complete");
+  m.onclick=function(){var j=done.indexOf(i);if(j>=0)done.splice(j,1);else done.push(i);save();open(i)};
+  var row=el("div","row"),p=el("button","alt","Previous"),n=el("button","alt",i<LESSONS.length-1?"Next":"Finish");
+  p.onclick=function(){i>0?open(i-1):home()};n.onclick=function(){i<LESSONS.length-1?open(i+1):home()};
+  p.disabled=i===0;p.style.opacity=i===0?.5:1;row.appendChild(p);row.appendChild(n);
+  var h=el("button","alt","All lessons");h.onclick=home;h.style.marginTop="8px";h.style.width="100%";
+  app.appendChild(m);m.style.width="100%";m.style.marginBottom="8px";app.appendChild(row);app.appendChild(h);
+}
+var ready=false;function status(){var on=navigator.onLine;net.textContent=on?(ready?"Online - saved for offline":"Online"):"Offline - progress still saves";net.className="pill"+(on?"":" off")}
+if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js").catch(function(){});navigator.serviceWorker.ready.then(function(){ready=true;status()}).catch(function(){})})}
+window.addEventListener("online",function(){status();sync()});window.addEventListener("offline",status);status();home();boot();
+</script>
+</body>
+</html>
