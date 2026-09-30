@@ -1,84 +1,799 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Rehoteq Classroom - Teacher</title>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b5537">
+<meta name="robots" content="noindex">
+<title>Teacher Console · Rehoteq Academy</title>
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="styles.css">
+<script>try{var t=localStorage.getItem("rc-theme");if(t)document.documentElement.dataset.theme=JSON.parse(t)}catch(e){}</script>
 <style>
-:root{--bg:#f6f8f7;--card:#fff;--ink:#1b1f23;--mute:#5b6470;--green:#0b5d3b;--gold:#c8961e;--soft:#eaf3ee;--line:#d9e2dc}
-@media (prefers-color-scheme:dark){:root{--bg:#101613;--card:#18211c;--ink:#e8efe9;--mute:#9aa7a0;--green:#3cb27a;--soft:#1e2b24;--line:#2b3a32}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,Arial,sans-serif;line-height:1.5}
-.wrap{max-width:900px;margin:0 auto;padding:16px}h1{color:var(--green);font-size:22px;margin:0 0 12px}h2{color:var(--green);font-size:16px;margin:18px 0 6px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
-.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.kpi{background:var(--soft);border-radius:12px;padding:10px;text-align:center}.kpi b{display:block;font-size:22px;color:var(--green)}
-button,select,input{font:inherit;border-radius:10px;border:1px solid var(--line);padding:10px 12px;background:var(--card);color:var(--ink)}
-button{background:var(--green);color:#fff;border:0;font-weight:700;cursor:pointer}button.alt{background:var(--soft);color:var(--green);border:1px solid var(--line)}
-table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}th{background:var(--soft);color:var(--green)}
-.mute{color:var(--mute);font-size:13px}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-</style></head><body><div class="wrap"><h1>Rehoteq Classroom: Teacher dashboard</h1><div id="root" class="mute">Loading...</div></div>
+  /* Console shell: sidebar on desktop, stacked on phones. */
+  .console{display:grid;grid-template-columns:238px minmax(0,1fr);gap:22px;align-items:start;padding:20px 16px 60px}
+  .rail{position:sticky;top:78px;display:flex;flex-direction:column;gap:14px}
+  .rail .card{padding:12px}
+  @media (max-width:860px){
+    .console{grid-template-columns:minmax(0,1fr);gap:14px;padding:14px 14px 48px}
+    .rail{position:static}
+    .rail .side{flex-direction:row;overflow-x:auto;gap:6px;scrollbar-width:none}
+    .rail .side::-webkit-scrollbar{display:none}
+    .navlink{white-space:nowrap;padding:9px 14px}
+    .navlink .cnt{display:none}
+    .rail .rail-foot{display:none}
+  }
+  .view-head{margin-bottom:16px}
+  .view-head h1{margin-bottom:3px}
+  .login-shell{min-height:100dvh;display:grid;place-items:center;padding:24px 16px}
+  .login-card{width:100%;max-width:400px}
+  .sheet-back{position:fixed;inset:0;background:rgba(6,42,28,.5);backdrop-filter:blur(3px);z-index:60;
+    display:flex;align-items:flex-end;justify-content:center;animation:fade .2s ease both}
+  @media (min-width:721px){.sheet-back{align-items:center}}
+  .sheet{background:var(--card);width:100%;max-width:520px;border-radius:var(--r-xl) var(--r-xl) 0 0;
+    padding:20px;max-height:88dvh;overflow:auto;animation:up .3s cubic-bezier(.32,.72,0,1) both;
+    padding-bottom:calc(20px + var(--safe-b))}
+  @media (min-width:721px){.sheet{border-radius:var(--r-xl);max-height:82dvh}}
+  @keyframes up{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:14px;margin-top:12px}
+  .kv dt{color:var(--mute);font-size:12.5px}
+  .kv dd{margin:0;font-weight:600;text-align:right}
+  .uid-box{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
+</style>
+</head>
+<body>
+
+<div class="topbar" id="topbar">
+  <div class="wrap wrap-wide inner">
+    <span class="logo">R</span>
+    <span class="brand" style="flex:1">
+      <span>
+        <span class="bn">Teacher Console</span>
+        <span class="bs">Rehoteq Academy</span>
+      </span>
+    </span>
+    <span id="chrome" class="row row-tight"></span>
+  </div>
+</div>
+
+<div id="root"></div>
+<div class="toast-host" id="toasts"></div>
+
+<!-- shared gradient defs for rings and bars -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#12855a"/><stop offset="100%" stop-color="#e2ad34"/>
+  </linearGradient>
+  <linearGradient id="barGrad" x1="0" y1="1" x2="0" y2="0">
+    <stop offset="0%" stop-color="#0b5537"/><stop offset="100%" stop-color="#2aa374"/>
+  </linearGradient>
+</defs></svg>
+
 <script type="module">
-const cfg={apiKey:"AIzaSyAZ12xbUzdzc_5L5JY6d3AlIvPxLKB60TA",authDomain:"rehoteq-classroom.firebaseapp.com",projectId:"rehoteq-classroom",appId:"1:773863865025:web:8b11f1cd911e9cf05b3240"};
-const TOTAL=13,B="https://www.gstatic.com/firebasejs/10.12.2/",root=document.getElementById("root");
-const $=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e};
-let A,Au,F,auth,db;
-try{[A,Au,F]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-auth.js"),import(B+"firebase-firestore.js")]);
-  const app=A.initializeApp(cfg);auth=Au.getAuth(app);db=F.getFirestore(app);
-  Au.onAuthStateChanged(auth,u=>u?load():loginView())}catch(e){root.textContent="Could not load. This page needs internet."}
-function loginView(m){
-  root.replaceChildren();const c=$("div","card");c.append($("p","mute","Teacher login (your account must be added as an admin)."));
-  const em=$("input");em.type="email";em.placeholder="Email";em.style.cssText="width:100%;margin:4px 0";
-  const pw=$("input");pw.type="password";pw.placeholder="Password";pw.style.cssText="width:100%;margin:4px 0";
-  const msg=$("div","mute",m||""),go=$("button","","Log in");
-  go.onclick=async()=>{msg.textContent="Please wait...";try{await Au.signInWithEmailAndPassword(auth,em.value.trim(),pw.value)}catch(e){msg.textContent="Wrong email or password, or no network."}};
-  c.append(em,pw,msg,go);root.append(c)}
-function tbl(head,rows){const t=$("table"),h=t.createTHead().insertRow();head.forEach(x=>h.append(Object.assign($("th"),{textContent:x})));
-  const b=t.createTBody();rows.forEach(r=>{const tr=b.insertRow();r.forEach(x=>{tr.insertCell().textContent=x})});
-  const w=$("div");w.style.overflowX="auto";w.append(t);return w}
-function csv(rows){const q=v=>{v=String(v);if(/^[=+\-@]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"'};return rows.map(r=>r.map(q).join(",")).join("\n")}
+/* =====================================================================
+   Rehoteq Teacher Console
+   Same Firebase data model as before — rebuilt interface.
+   ===================================================================== */
+
+const CFG = {
+  apiKey: "AIzaSyAZ12xbUzdzc_5L5JY6d3AlIvPxLKB60TA",
+  authDomain: "rehoteq-classroom.firebaseapp.com",
+  projectId: "rehoteq-classroom",
+  appId: "1:773863865025:web:8b11f1cd911e9cf05b3240"
+};
+const TOTAL_LESSONS = 13;
+const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
+
+/* ---------- tiny DOM helper ---------- */
+function h(tag, props, ...kids){
+  const e = document.createElement(tag);
+  if (props) for (const k in props){
+    const v = props[k];
+    if (v === undefined || v === null || v === false) continue;
+    if (k === "class") e.className = v;
+    else if (k === "text") e.textContent = v;
+    else if (k === "html") e.innerHTML = v;
+    else if (k === "style") e.style.cssText = v;
+    else if (k.startsWith("on")) e[k.toLowerCase()] = v;
+    else e.setAttribute(k, v === true ? "" : v);
+  }
+  kids.flat().forEach(k => { if (k === null || k === undefined || k === false) return;
+    e.append(k.nodeType ? k : document.createTextNode(String(k))); });
+  return e;
+}
+const svgNS = "http://www.w3.org/2000/svg";
+function s(tag, props, ...kids){
+  const e = document.createElementNS(svgNS, tag);
+  for (const k in (props||{})) if (props[k] !== undefined && props[k] !== null) e.setAttribute(k, props[k]);
+  kids.flat().forEach(k => { if (k) e.append(k.nodeType ? k : document.createTextNode(String(k))); });
+  return e;
+}
+const root = document.getElementById("root");
+const chrome = document.getElementById("chrome");
+
+/* ---------- toasts ---------- */
+function toast(msg, kind){
+  const host = document.getElementById("toasts");
+  const t = h("div", { class: "toast" + (kind ? " " + kind : ""), text: msg });
+  host.append(t);
+  setTimeout(() => { t.style.transition = "opacity .3s, transform .3s";
+    t.style.opacity = 0; t.style.transform = "translateY(8px)"; setTimeout(() => t.remove(), 320); }, 2800);
+}
+
+/* ---------- theme ---------- */
+function currentTheme(){
+  try { return JSON.parse(localStorage.getItem("rc-theme")) || "auto"; } catch(e){ return "auto"; }
+}
+function setTheme(v){
+  try { localStorage.setItem("rc-theme", JSON.stringify(v)); } catch(e){}
+  if (v === "auto") delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = v;
+}
+function themeButton(){
+  const order = ["auto", "light", "dark"];
+  const icon = { auto: "◐", light: "☀", dark: "☾" };
+  const b = h("button", { class: "icon-btn", title: "Theme: " + currentTheme(), "aria-label": "Change theme" });
+  const paint = () => { b.textContent = icon[currentTheme()]; b.title = "Theme: " + currentTheme(); };
+  b.onclick = () => { setTheme(order[(order.indexOf(currentTheme()) + 1) % 3]); paint(); };
+  paint(); return b;
+}
+
+/* ---------- formatting ---------- */
+const initials = n => (n || "?").trim().split(/\s+/).slice(0,2).map(w => w[0]).join("").toUpperCase() || "?";
+const pctOf = (a, b) => b ? Math.round(a / b * 100) : 0;
+const fmtDate = d => d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+const fmtWhen = d => d.toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+function gradeTone(g){ return /^[AB]/.test(g) ? "ok" : /^[C]/.test(g) ? "info" : /^[DE]/.test(g) ? "gold" : "bad"; }
+
+/* ---------- state ---------- */
+let A, Au, F, auth, db;
+let DATA = null;                 // { people, results, config }
+let nav = "overview";
+let learnerSort = { key: "name", dir: 1 };
+let learnerQuery = "";
+let resultFilter = "All quizzes";
+
+/* ---------- boot ---------- */
+try {
+  [A, Au, F] = await Promise.all([
+    import(SDK + "firebase-app.js"),
+    import(SDK + "firebase-auth.js"),
+    import(SDK + "firebase-firestore.js")
+  ]);
+  const app = A.initializeApp(CFG);
+  auth = Au.getAuth(app);
+  db = F.getFirestore(app);
+  chrome.append(themeButton());
+  Au.onAuthStateChanged(auth, u => u ? load() : loginView());
+} catch (e) {
+  chrome.append(themeButton());
+  root.append(h("div", { class: "wrap", style: "padding:40px 16px" },
+    h("div", { class: "card" },
+      h("div", { class: "empty" },
+        h("div", { class: "em", text: "⛰" }),
+        h("b", { text: "This console needs the internet" }),
+        h("div", { class: "mute", text: "The teacher tools read live data from Firebase. Reconnect and refresh this page." })))));
+}
+
+/* =====================================================================
+   LOGIN
+   ===================================================================== */
+function loginView(){
+  chrome.replaceChildren(themeButton());
+  root.replaceChildren();
+  const err = h("div", { class: "err" });
+  const email = h("input", { type: "email", placeholder: "you@school.com", autocomplete: "email" });
+  const pass  = h("input", { type: "password", placeholder: "Your password", autocomplete: "current-password" });
+  const go = h("button", { class: "btn block lg", style: "margin-top:18px" }, "Enter the console");
+
+  const submit = async () => {
+    err.textContent = "";
+    if (!email.value.trim() || !pass.value) { err.textContent = "Enter your email and password."; return; }
+    go.disabled = true; go.textContent = "Checking...";
+    try { await Au.signInWithEmailAndPassword(auth, email.value.trim(), pass.value); }
+    catch (e) {
+      err.textContent = e.code === "auth/network-request-failed"
+        ? "No network. Try again when you have signal."
+        : "Wrong email or password.";
+      go.disabled = false; go.textContent = "Enter the console";
+    }
+  };
+  go.onclick = submit;
+  [email, pass].forEach(i => i.onkeydown = ev => { if (ev.key === "Enter") submit(); });
+
+  root.append(h("div", { class: "login-shell" },
+    h("div", { class: "login-card stack rise" },
+      h("div", { class: "card hero", style: "text-align:center" },
+        h("div", { class: "logo", style: "margin:0 auto 12px;width:48px;height:48px;font-size:22px;border-radius:14px;background:rgba(255,255,255,.18);box-shadow:none" }, "R"),
+        h("div", { class: "eyebrow", text: "Rehoteq Academy" }),
+        h("h1", { text: "Teacher Console" }),
+        h("p", { class: "lead", style: "margin:6px 0 0", text: "Class settings, learner progress and quiz results — in one place." })),
+      h("div", { class: "card" },
+        h("label", { class: "field" }, h("span", { class: "lbl", text: "Email" }), email),
+        h("label", { class: "field" }, h("span", { class: "lbl", text: "Password" }), pass),
+        err, go,
+        h("p", { class: "faint", style: "margin:14px 0 0;text-align:center",
+          text: "Your account must be listed in the admins collection." })),
+      h("p", { class: "faint center", text: "Rehoteq Technologies · Okitipupa, Ondo State" }))));
+}
+
+/* =====================================================================
+   DATA
+   ===================================================================== */
+function skeleton(){
+  root.replaceChildren(h("div", { class: "wrap wrap-wide", style: "padding:26px 16px" },
+    h("div", { class: "grid g4", style: "margin-bottom:16px" },
+      ...[0,1,2,3].map(() => h("div", { class: "kpi" },
+        h("div", { class: "skel", style: "width:52px;height:26px;margin-bottom:8px" }),
+        h("div", { class: "skel", style: "width:88px;height:11px" })))),
+    h("div", { class: "card" },
+      ...[0,1,2,3,4].map(i => h("div", { class: "skel", style: "height:17px;margin:11px 0;width:" + (100 - i*9) + "%" })))));
+}
+
 async function load(){
-  root.textContent="Loading...";
-  try{
-    const g=n=>F.getDocs(F.collection(db,n));
-    const jobs=[["results",F.getDocs(F.query(F.collection(db,"results"),F.orderBy("takenAt","desc"),F.limit(500)))],["users",g("users")],["learners",g("learners")],["config",F.getDoc(F.doc(db,"config","classroom"))]];
-    const out=await Promise.allSettled(jobs.map(j=>j[1]));
-    const bad=out.map((o,i)=>o.status==="rejected"?[jobs[i][0],o.reason]:null).filter(Boolean);
-    if(bad.length){const e=new Error("load");e.code=bad.every(b=>b[1]&&b[1].code==="permission-denied")?"permission-denied":"other";e.bad=bad.map(b=>b[0]);throw e}
-    const [rs,us,ls,cf]=out.map(o=>o.value);
-    const P={};us.forEach(d=>{const x=d.data();P[d.id]={email:x.email||"",lessons:(x.done||[]).length}});
-    ls.forEach(d=>{P[d.id]=Object.assign(P[d.id]||{email:"",lessons:0},d.data())});
-    const res=[];rs.forEach(d=>{const x=d.data();res.push({uid:x.uid,quiz:x.quiz,score:x.score,total:x.total,pct:x.pct,grade:x.grade,at:new Date(x.takenAt)})});
-    draw(P,res,cf.exists()?cf.data():{})
-  }catch(e){root.replaceChildren();const c=$("div","card");const me=auth.currentUser;
-    if(e.code==="permission-denied"){
-      c.append($("p","","Access denied on: "+(e.bad||[]).join(", ")+"."));
-      c.append($("p","mute","Check these two things: (1) Firestore > admins collection has a document whose ID is exactly the UID below; (2) the latest rules from the README are published (they must include isAdmin, learners and config)."));
-      c.append($("p","mute","Logged in as "+(me?me.email:"?")+". Your UID:"));
-      const box=$("input");box.readOnly=true;box.value=me?me.uid:"";box.style.cssText="width:100%;margin:4px 0";c.append(box);
-      const cp=$("button","alt","Copy UID");cp.onclick=async()=>{try{await navigator.clipboard.writeText(box.value);cp.textContent="Copied"}catch(x){box.select();cp.textContent="Select and copy"}};c.append(cp," ")}
-    else c.append($("p","","Could not load. Check your network and try again."));
-    const o=$("button","alt","Log out");o.onclick=()=>Au.signOut(auth);c.append(o);root.append(c)}}
-function dl(name,text){const b=new Blob([text],{type:"text/csv"}),a=$("a");a.href=URL.createObjectURL(b);a.download=name;document.body.append(a);a.click();a.remove()}
-function draw(P,res,cfg){
-  root.replaceChildren();const ids=Object.keys(P),nm=u=>u?(u.name||u.email||"?"):"?";
-  const avg=res.length?Math.round(res.reduce((s,r)=>s+r.pct,0)/res.length):0;
-  const k=$("div","kpis");[[ids.length,"Learners"],[res.length,"Quiz attempts"],[avg+"%","Average score"]].forEach(([n,l])=>{const d=$("div","kpi");d.append($("b","",n),$("span","mute",l));k.append(d)});root.append(k);
-  const cc=$("div","card");cc.append($("h2","","Class settings (shown on every learner's dashboard)"));
-  const mk=(ph,v)=>{const i=$("input");i.placeholder=ph;i.value=v||"";i.style.cssText="width:100%;margin:4px 0";return i};
-  const nx=mk("Next class, e.g. Sat 10am - HTML lesson",cfg.next),lk=mk("Zoom or Meet link (https://...)",cfg.link),nt=mk("Announcement (optional)",cfg.note);
-  const sv=$("button","","Save class settings"),sm=$("span","mute","");sm.style.marginLeft="8px";
-  sv.onclick=async()=>{const l=lk.value.trim();if(l&&!l.startsWith("https://")){sm.textContent="Link must start with https://";return}
-    try{await F.setDoc(F.doc(db,"config","classroom"),{next:nx.value.trim(),link:l,note:nt.value.trim(),updatedAt:Date.now()});sm.textContent="Saved."}catch(e){sm.textContent="Could not save."}};
-  cc.append(nx,lk,nt,sv,sm);root.append(cc);
-  const top=$("div","row");top.style.margin="12px 0";
-  const sel=$("select");["All quizzes",...new Set(res.map(r=>r.quiz))].forEach(v=>sel.append(new Option(v,v)));
-  const ex=$("button","","Export results"),el2=$("button","","Export learners"),rf=$("button","alt","Refresh"),lo=$("button","alt","Log out");
-  rf.onclick=load;lo.onclick=()=>Au.signOut(auth);top.append(sel,ex,el2,rf,lo);root.append(top);
-  root.append($("h2","","Learners"));
-  const per={};res.forEach(r=>{(per[r.uid]=per[r.uid]||[]).push(r.pct)});
-  const av=id=>per[id]?Math.round(per[id].reduce((a,b)=>a+b,0)/per[id].length)+"%":"-";
-  const L=ids.map(id=>[nm(P[id]),P[id].phone||"",P[id].email||"",P[id].track||"",P[id].mode||"",P[id].goal||"",Math.round(P[id].lessons/TOTAL*100)+"%",(per[id]||[]).length,av(id)]);
-  const fs=mk("Search learners by name, phone or email","");const lb=$("div");const HD=["Name","Phone","Email","Track","Attending","Goal","Lessons","Quizzes","Avg"];const showL=()=>{const q=fs.value.toLowerCase();lb.replaceChildren(tbl(HD,L.filter(r=>r.join(" ").toLowerCase().includes(q))))};fs.oninput=showL;root.append(fs,lb);showL();
-  root.append($("h2","","Quiz results"));const box=$("div");root.append(box);
-  const rows=()=>res.filter(r=>sel.value==="All quizzes"||r.quiz===sel.value);
-  const show=()=>box.replaceChildren(tbl(["Learner","Quiz","Score","%","Grade","Date"],rows().map(r=>[nm(P[r.uid]),r.quiz,r.score+"/"+r.total,r.pct+"%",r.grade,r.at.toLocaleString()])));
-  sel.onchange=show;show();
-  ex.onclick=()=>dl("rehoteq-results.csv",csv([["Learner","Email","Quiz","Score","Total","Percent","Grade","Date"],...rows().map(r=>[nm(P[r.uid]),(P[r.uid]||{}).email||"",r.quiz,r.score,r.total,r.pct,r.grade,r.at.toISOString()])]));
-  el2.onclick=()=>dl("rehoteq-learners.csv",csv([["Name","Phone","Email","Track","Attending","Device","Level","Goal","Lessons done","Quizzes","Average"],...ids.map(id=>[nm(P[id]),P[id].phone||"",P[id].email||"",P[id].track||"",P[id].mode||"",P[id].device||"",P[id].level||"",P[id].goal||"",P[id].lessons,(per[id]||[]).length,av(id)])]))}
-</script></body></html>
+  skeleton();
+  try {
+    const all = n => F.getDocs(F.collection(db, n));
+    const jobs = [
+      ["results",  F.getDocs(F.query(F.collection(db, "results"), F.orderBy("takenAt", "desc"), F.limit(500)))],
+      ["users",    all("users")],
+      ["learners", all("learners")],
+      ["config",   F.getDoc(F.doc(db, "config", "classroom"))]
+    ];
+    const out = await Promise.allSettled(jobs.map(j => j[1]));
+    const bad = out.map((o, i) => o.status === "rejected" ? [jobs[i][0], o.reason] : null).filter(Boolean);
+    if (bad.length){
+      const e = new Error("load");
+      e.code = bad.every(b => b[1] && b[1].code === "permission-denied") ? "permission-denied" : "other";
+      e.bad = bad.map(b => b[0]);
+      throw e;
+    }
+    const [rs, us, ls, cf] = out.map(o => o.value);
+
+    const people = {};
+    us.forEach(d => { const x = d.data(); people[d.id] = { uid: d.id, email: x.email || "", lessons: (x.done || []).length, doneList: x.done || [] }; });
+    ls.forEach(d => { people[d.id] = Object.assign({ uid: d.id, email: "", lessons: 0, doneList: [] }, people[d.id], d.data()); });
+
+    const results = [];
+    rs.forEach(d => { const x = d.data();
+      results.push({ uid: x.uid, quiz: x.quiz, score: x.score, total: x.total, pct: x.pct, grade: x.grade, at: new Date(x.takenAt) }); });
+
+    DATA = { people, results, config: cf.exists() ? cf.data() : {} };
+    paint();
+  } catch (e) { errorView(e); }
+}
+
+function errorView(e){
+  chrome.replaceChildren(themeButton());
+  root.replaceChildren();
+  const me = auth.currentUser;
+  const card = h("div", { class: "card stack" });
+
+  if (e.code === "permission-denied"){
+    const uidBox = h("input", { class: "uid-box", readonly: true, value: me ? me.uid : "" });
+    const copy = h("button", { class: "btn ghost sm" }, "Copy UID");
+    copy.onclick = async () => {
+      try { await navigator.clipboard.writeText(uidBox.value); toast("UID copied", "ok"); }
+      catch (x) { uidBox.select(); toast("Select and copy the UID"); }
+    };
+    card.append(
+      h("div", { class: "callout bad" }, h("div", null,
+        h("b", { text: "Access denied" }), " on: " + (e.bad || []).join(", ") + ".")),
+      h("h2", { text: "Two things to check" }),
+      h("ol", { class: "prose" },
+        h("li", { text: "Firestore → the admins collection must have a document whose ID is exactly the UID below." }),
+        h("li", { text: "The latest security rules from the README must be published (they need isAdmin, learners and config)." })),
+      h("p", { class: "mute", text: "Signed in as " + (me ? me.email : "unknown") + ". Your UID:" }),
+      uidBox,
+      h("div", { class: "row" }, copy, logoutButton("btn quiet sm")));
+  } else {
+    card.append(h("div", { class: "empty" },
+      h("div", { class: "em", text: "⚡" }),
+      h("b", { text: "Could not load the classroom" }),
+      h("div", { class: "mute", text: "Check your network and try again." })),
+      h("div", { class: "row" },
+        h("button", { class: "btn", onclick: load }, "Try again"), logoutButton("btn quiet")));
+  }
+  root.append(h("div", { class: "wrap", style: "padding:32px 16px" }, card));
+}
+
+function logoutButton(cls){
+  return h("button", { class: cls || "btn quiet", onclick: () => Au.signOut(auth) }, "Log out");
+}
+
+/* =====================================================================
+   SHELL
+   ===================================================================== */
+function paint(){
+  const { people, results } = DATA;
+  const ids = Object.keys(people);
+
+  chrome.replaceChildren(
+    h("button", { class: "icon-btn", title: "Refresh data", "aria-label": "Refresh", onclick: () => { toast("Refreshing..."); load(); } }, "⟳"),
+    themeButton(),
+    h("button", { class: "btn ghost sm", onclick: () => Au.signOut(auth) }, "Log out")
+  );
+
+  const views = {
+    overview: ["◈", "Overview", ""],
+    learners: ["◎", "Learners", String(ids.length)],
+    results:  ["◇", "Results",  String(results.length)],
+    settings: ["✦", "Class settings", ""]
+  };
+  const side = h("nav", { class: "side" });
+  Object.entries(views).forEach(([key, [ic, label, cnt]]) => {
+    side.append(h("button", { class: "navlink" + (nav === key ? " on" : ""), onclick: () => { nav = key; paint(); window.scrollTo({ top: 0 }); } },
+      h("span", { class: "ni", text: ic }), h("span", { text: label }), cnt ? h("span", { class: "cnt", text: cnt }) : null));
+  });
+
+  const body = h("main", { class: "fade" });
+  if (nav === "overview") body.append(...overviewView());
+  if (nav === "learners") body.append(...learnersView());
+  if (nav === "results")  body.append(...resultsView());
+  if (nav === "settings") body.append(...settingsView());
+
+  root.replaceChildren(h("div", { class: "wrap wrap-wide console" },
+    h("aside", { class: "rail" },
+      h("div", { class: "card pad-sm" }, side),
+      h("div", { class: "card pad-sm rail-foot" },
+        h("div", { class: "eyebrow", text: "Signed in" }),
+        h("div", { class: "row row-tight", style: "margin-top:8px;flex-wrap:nowrap" },
+          h("span", { class: "avatar sm", text: initials(auth.currentUser?.email) }),
+          h("span", { class: "mute", style: "font-size:12px;overflow:hidden;text-overflow:ellipsis",
+            text: auth.currentUser ? auth.currentUser.email : "" })))),
+    body));
+}
+
+/* ---------- shared derivations ---------- */
+function derive(){
+  const { people, results } = DATA;
+  const ids = Object.keys(people);
+  const perLearner = {};
+  results.forEach(r => (perLearner[r.uid] = perLearner[r.uid] || []).push(r));
+  const avgFor = id => perLearner[id]?.length
+    ? Math.round(perLearner[id].reduce((s, r) => s + r.pct, 0) / perLearner[id].length) : null;
+  const avgAll = results.length ? Math.round(results.reduce((s, r) => s + r.pct, 0) / results.length) : 0;
+  const completion = ids.length
+    ? Math.round(ids.reduce((s, id) => s + Math.min(1, people[id].lessons / TOTAL_LESSONS), 0) / ids.length * 100) : 0;
+  const active7 = new Set(results.filter(r => Date.now() - r.at.getTime() < 7 * 864e5).map(r => r.uid)).size;
+  return { ids, perLearner, avgFor, avgAll, completion, active7 };
+}
+
+/* =====================================================================
+   VIEW · OVERVIEW
+   ===================================================================== */
+function overviewView(){
+  const { people, results, config } = DATA;
+  const { ids, avgAll, completion, active7, perLearner, avgFor } = derive();
+
+  const head = h("header", { class: "view-head" },
+    h("div", { class: "eyebrow", text: "Today · " + new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" }) }),
+    h("h1", { text: "How the class is doing" }),
+    h("p", { class: "mute", text: "Live from Firebase. Last 500 quiz attempts." }));
+
+  const kpis = h("section", { class: "grid g4 rise" },
+    kpi(ids.length, "Learners enrolled", (active7 + " active this week"), ""),
+    kpi(completion + "%", "Average course completion", TOTAL_LESSONS + " lessons in the track", "gold"),
+    kpi(results.length, "Quiz attempts", "recorded", "sky"),
+    kpi(avgAll + "%", "Average quiz score", avgAll >= 50 ? "class is passing" : "needs support", avgAll >= 50 ? "" : "clay"));
+
+  /* per-quiz averages */
+  const byQuiz = {};
+  results.forEach(r => { (byQuiz[r.quiz] = byQuiz[r.quiz] || []).push(r.pct); });
+  const quizKeys = Object.keys(byQuiz).sort();
+  const quizData = quizKeys.map(k => ({
+    label: k,
+    value: Math.round(byQuiz[k].reduce((a, b) => a + b, 0) / byQuiz[k].length),
+    n: byQuiz[k].length
+  }));
+
+  const chartCard = h("div", { class: "card rise rise-1" },
+    h("div", { class: "card-title" }, h("h2", { text: "Average score per quiz" }),
+      h("span", { class: "pill ghost", text: quizKeys.length + " quizzes attempted" })),
+    quizData.length ? barChart(quizData)
+      : h("div", { class: "empty" }, h("div", { class: "em", text: "◇" }), h("b", { text: "No attempts yet" }),
+          h("div", { class: "mute", text: "Charts appear as soon as learners take a quiz." })));
+
+  /* weakest topic callout */
+  let insight = null;
+  if (quizData.length){
+    const worst = quizData.slice().sort((a, b) => a.value - b.value)[0];
+    const best  = quizData.slice().sort((a, b) => b.value - a.value)[0];
+    insight = h("div", { class: "callout " + (worst.value < 50 ? "warn" : "ok"), style: "margin-top:14px" },
+      h("div", null, h("b", { text: worst.value < 50 ? "Revisit " + worst.label : "Strongest: " + best.label + " (" + best.value + "%)" }),
+        h("div", { style: "margin-top:2px" },
+          worst.value < 50
+            ? "Learners average " + worst.value + "% here — the lowest in the class. Worth a live recap."
+            : "Lowest is " + worst.label + " at " + worst.value + "%. No topic is failing.")));
+    chartCard.append(insight);
+  }
+
+  /* activity last 14 days */
+  const days = [];
+  for (let i = 13; i >= 0; i--){
+    const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - i);
+    const next = d.getTime() + 864e5;
+    days.push({ label: fmtDate(d), value: results.filter(r => r.at >= d && r.at < next).length });
+  }
+  const activityCard = h("div", { class: "card rise rise-2" },
+    h("div", { class: "card-title" }, h("h2", { text: "Quiz activity" }),
+      h("span", { class: "pill ghost", text: "last 14 days" })),
+    sparkline(days));
+
+  /* top learners */
+  const ranked = ids.map(id => ({
+    id, p: people[id],
+    lessons: pctOf(people[id].lessons, TOTAL_LESSONS),
+    avg: avgFor(id),
+    attempts: (perLearner[id] || []).length
+  })).sort((a, b) => (b.lessons + (b.avg || 0)) - (a.lessons + (a.avg || 0))).slice(0, 5);
+
+  const leaderCard = h("div", { class: "card rise rise-3" },
+    h("div", { class: "card-title" }, h("h2", { text: "Furthest along" }),
+      h("button", { class: "btn quiet sm", onclick: () => { nav = "learners"; paint(); } }, "See all →")),
+    ranked.length ? h("div", null, ...ranked.map((r, i) =>
+      h("button", { class: "item", onclick: () => openLearner(r.id) },
+        h("span", { class: "avatar", text: initials(r.p.name || r.p.email) }),
+        h("span", { class: "it-body" },
+          h("span", { class: "it-title", text: r.p.name || r.p.email || "Unnamed learner" }),
+          h("span", { class: "it-sub", text: r.lessons + "% of lessons · " + r.attempts + " quiz" + (r.attempts === 1 ? "" : "zes") + (r.avg !== null ? " · avg " + r.avg + "%" : "") })),
+        i === 0 ? h("span", { class: "pill gold", text: "★ top" }) : null,
+        h("span", { class: "chev", text: "›" }))))
+      : h("div", { class: "empty" }, h("div", { class: "em", text: "◎" }), h("b", { text: "No learners yet" }),
+          h("div", { class: "mute", text: "Share the join link and they will appear here." })));
+
+  /* class settings mirror */
+  const nextCard = h("div", { class: "card rise rise-4" },
+    h("div", { class: "card-title" }, h("h2", { text: "What learners see now" }),
+      h("button", { class: "btn quiet sm", onclick: () => { nav = "settings"; paint(); } }, "Edit →")),
+    config.next
+      ? h("div", { class: "stack" },
+          h("div", null, h("div", { class: "eyebrow", text: "Next live class" }), h("div", { style: "font-weight:650", text: config.next })),
+          config.link ? h("div", { class: "pill info", text: "Join link is set" }) : h("div", { class: "pill gold", text: "No join link yet" }),
+          config.note ? h("div", { class: "callout" }, h("div", null, h("b", { text: "Announcement " }), config.note)) : null)
+      : h("div", { class: "empty" }, h("div", { class: "em", text: "✦" }), h("b", { text: "Nothing scheduled" }),
+          h("div", { class: "mute", text: "Add the next class so every dashboard shows it." })));
+
+  return [head, kpis, h("div", { class: "grid", style: "margin-top:16px" }, chartCard, activityCard,
+    h("div", { class: "grid g2", style: "align-items:start" }, leaderCard, nextCard))];
+}
+
+function kpi(value, label, sub, tone){
+  return h("div", { class: "kpi " + (tone || "") },
+    h("b", { class: "num", text: String(value) }),
+    h("span", { text: label }),
+    sub ? h("div", { class: "kpi-sub", text: sub }) : null);
+}
+
+function barChart(data){
+  const W = 100 * data.length + 40, H = 210, pad = 30, bw = 52, gap = 100 - bw;
+  const g = s("svg", { class: "chart", viewBox: "0 0 " + W + " " + H, preserveAspectRatio: "none",
+    style: "height:210px", role: "img", "aria-label": "Average score per quiz" });
+  [0, 25, 50, 75, 100].forEach(v => {
+    const y = H - pad - (v / 100) * (H - pad - 18);
+    g.append(s("line", { class: "gridline", x1: 26, y1: y, x2: W, y2: y, "stroke-dasharray": v ? "3 5" : "" }));
+    g.append(s("text", { class: "lbl", x: 0, y: y + 3.5 }, v + "%"));
+  });
+  data.forEach((d, i) => {
+    const x = 34 + i * 100 + gap / 2;
+    const bh = Math.max(3, (d.value / 100) * (H - pad - 18));
+    const y = H - pad - bh;
+    const r = s("rect", { class: "barr", x, y, width: bw, height: bh, rx: 8 });
+    r.append(s("title", null, d.label + ": " + d.value + "% from " + d.n + " attempt" + (d.n === 1 ? "" : "s")));
+    g.append(r);
+    g.append(s("text", { class: "valn", x: x + bw / 2, y: y - 6, "text-anchor": "middle" }, d.value + "%"));
+    g.append(s("text", { class: "lbl", x: x + bw / 2, y: H - pad + 15, "text-anchor": "middle" }, d.label));
+  });
+  const box = h("div", { style: "overflow-x:auto" }); box.append(g); return box;
+}
+
+function sparkline(days){
+  const W = 640, H = 120, pad = 22;
+  const max = Math.max(1, ...days.map(d => d.value));
+  const step = (W - pad * 2) / (days.length - 1);
+  const pt = i => [pad + i * step, H - pad - (days[i].value / max) * (H - pad * 2)];
+  const line = days.map((_, i) => pt(i).map(n => n.toFixed(1)).join(",")).join(" ");
+  const area = "M" + pad + "," + (H - pad) + " L" + line.split(" ").join(" L") + " L" + (W - pad) + "," + (H - pad) + " Z";
+  const g = s("svg", { class: "chart", viewBox: "0 0 " + W + " " + H, style: "height:120px;width:100%",
+    preserveAspectRatio: "none", role: "img", "aria-label": "Quiz attempts over the last 14 days" });
+  const grad = s("linearGradient", { id: "spark", x1: 0, y1: 0, x2: 0, y2: 1 });
+  grad.append(s("stop", { offset: "0%", "stop-color": "#2aa374", "stop-opacity": .38 }));
+  grad.append(s("stop", { offset: "100%", "stop-color": "#2aa374", "stop-opacity": 0 }));
+  g.append(s("defs", null, grad));
+  g.append(s("path", { d: area, fill: "url(#spark)" }));
+  g.append(s("polyline", { points: line, fill: "none", stroke: "#12855a", "stroke-width": 2.4,
+    "stroke-linejoin": "round", "stroke-linecap": "round", "vector-effect": "non-scaling-stroke" }));
+  days.forEach((d, i) => { const [x, y] = pt(i);
+    const c = s("circle", { cx: x, cy: y, r: d.value ? 3.4 : 2, fill: d.value ? "#12855a" : "#c3d5c9" });
+    c.append(s("title", null, d.label + ": " + d.value + " attempt" + (d.value === 1 ? "" : "s"))); g.append(c); });
+  return h("div", null, g,
+    h("div", { class: "spread faint", style: "margin-top:4px" },
+      h("span", { text: days[0].label }), h("span", { text: days[days.length - 1].label })));
+}
+
+/* =====================================================================
+   VIEW · LEARNERS
+   ===================================================================== */
+function learnersView(){
+  const { people } = DATA;
+  const { ids, perLearner, avgFor } = derive();
+
+  const rows = ids.map(id => {
+    const p = people[id];
+    return { id, name: p.name || p.email || "Unnamed", phone: p.phone || "", email: p.email || "",
+      track: p.track || "—", mode: p.mode || "—", device: p.device || "", level: p.level || "", goal: p.goal || "—",
+      lessons: pctOf(p.lessons, TOTAL_LESSONS), quizzes: (perLearner[id] || []).length, avg: avgFor(id) };
+  });
+
+  const search = h("input", { type: "search", placeholder: "Search name, phone, email or goal", value: learnerQuery });
+  const exportBtn = h("button", { class: "btn ghost sm" }, "⇩ Export CSV");
+  const tableHost = h("div");
+
+  const cols = [
+    ["name", "Learner"], ["track", "Track"], ["mode", "Attending"],
+    ["lessons", "Lessons"], ["quizzes", "Quizzes"], ["avg", "Average"], ["phone", "Phone"]
+  ];
+
+  function visible(){
+    const q = learnerQuery.trim().toLowerCase();
+    let out = rows.filter(r => !q || [r.name, r.phone, r.email, r.goal, r.track].join(" ").toLowerCase().includes(q));
+    const { key, dir } = learnerSort;
+    out.sort((a, b) => {
+      const x = a[key], y = b[key];
+      const na = x === null ? -1 : x, nb = y === null ? -1 : y;
+      if (typeof na === "number" && typeof nb === "number") return (na - nb) * dir;
+      return String(na).localeCompare(String(nb)) * dir;
+    });
+    return out;
+  }
+
+  function drawTable(){
+    const list = visible();
+    if (!list.length){
+      tableHost.replaceChildren(h("div", { class: "card" }, h("div", { class: "empty" },
+        h("div", { class: "em", text: "◎" }),
+        h("b", { text: learnerQuery ? "No learner matches that" : "No learners yet" }),
+        h("div", { class: "mute", text: learnerQuery ? "Try part of a name or phone number." : "Share join.html and sign-ups appear here." }))));
+      return;
+    }
+    const thead = h("thead"), tr = h("tr");
+    cols.forEach(([key, label]) => {
+      const on = learnerSort.key === key;
+      tr.append(h("th", { class: "sortable", onclick: () => {
+        learnerSort = { key, dir: on ? -learnerSort.dir : (typeof rows[0][key] === "number" ? -1 : 1) }; drawTable();
+      } }, label, h("span", { class: "arrow", text: on ? (learnerSort.dir > 0 ? "▲" : "▼") : "↕" })));
+    });
+    thead.append(tr);
+    const tbody = h("tbody");
+    list.forEach(r => {
+      tbody.append(h("tr", { style: "cursor:pointer", onclick: () => openLearner(r.id) },
+        h("td", { class: "strong" }, h("span", { class: "cell-user" },
+          h("span", { class: "avatar sm", text: initials(r.name) }),
+          h("span", null, r.name))),
+        h("td", null, h("span", { class: "pill ghost", text: r.track })),
+        h("td", { text: r.mode }),
+        h("td", null, h("span", { class: "mini-bar" }, h("i", { style: "width:" + r.lessons + "%" })),
+          h("span", { class: "num", style: "margin-left:8px;font-weight:650", text: r.lessons + "%" })),
+        h("td", { class: "num", text: String(r.quizzes) }),
+        h("td", null, r.avg === null ? h("span", { class: "faint", text: "—" })
+          : h("span", { class: "pill " + gradeTone(r.avg >= 70 ? "A" : r.avg >= 50 ? "C" : "F"), text: r.avg + "%" })),
+        h("td", { class: "mute", text: r.phone || "—" })));
+    });
+    tableHost.replaceChildren(h("div", { class: "tbl-wrap" }, h("table", null, thead, tbody)),
+      h("p", { class: "faint", style: "margin-top:8px", text: list.length + " of " + rows.length + " learners · tap a row for the full record" }));
+  }
+
+  search.oninput = () => { learnerQuery = search.value; drawTable(); };
+  exportBtn.onclick = () => {
+    const list = visible();
+    download("rehoteq-learners.csv", toCSV([
+      ["Name","Phone","Email","Track","Attending","Device","Level","Goal","Lessons %","Quizzes","Average %"],
+      ...list.map(r => [r.name, r.phone, r.email, r.track, r.mode, r.device, r.level, r.goal, r.lessons, r.quizzes, r.avg === null ? "" : r.avg])
+    ]));
+    toast("Exported " + list.length + " learners", "ok");
+  };
+  drawTable();
+
+  return [
+    h("header", { class: "view-head spread" },
+      h("div", null, h("h1", { text: "Learners" }),
+        h("p", { class: "mute", text: rows.length + " enrolled · sortable, searchable, exportable" })),
+      exportBtn),
+    h("div", { class: "card pad-sm", style: "margin-bottom:12px" }, h("div", { class: "search" }, search)),
+    tableHost
+  ];
+}
+
+/* ---------- learner detail sheet ---------- */
+function openLearner(id){
+  const p = DATA.people[id];
+  const { perLearner, avgFor } = derive();
+  const attempts = (perLearner[id] || []).slice().sort((a, b) => b.at - a.at);
+  const lessons = pctOf(p.lessons, TOTAL_LESSONS);
+
+  const close = () => back.remove();
+  const back = h("div", { class: "sheet-back", onclick: e => { if (e.target === back) close(); } });
+  const sheet = h("div", { class: "sheet" },
+    h("div", { class: "spread", style: "margin-bottom:14px" },
+      h("div", { class: "row row-tight", style: "flex-wrap:nowrap" },
+        h("span", { class: "avatar lg", text: initials(p.name || p.email) }),
+        h("div", null,
+          h("h2", { style: "font-size:19px", text: p.name || "Unnamed learner" }),
+          h("div", { class: "mute", text: p.email || p.phone || "" }))),
+      h("button", { class: "icon-btn", onclick: close, "aria-label": "Close" }, "✕")),
+
+    h("div", { class: "grid g2" },
+      h("div", { class: "kpi" }, h("b", { text: lessons + "%" }), h("span", { text: "Lessons complete" }),
+        h("div", { class: "kpi-sub", text: p.lessons + " of " + TOTAL_LESSONS })),
+      h("div", { class: "kpi gold" }, h("b", { text: avgFor(id) === null ? "—" : avgFor(id) + "%" }),
+        h("span", { text: "Quiz average" }), h("div", { class: "kpi-sub", text: attempts.length + " attempt" + (attempts.length === 1 ? "" : "s") }))),
+
+    h("div", { class: "bar", style: "margin:14px 0 4px" }, h("i", { style: "width:" + lessons + "%" })),
+
+    h("dl", { class: "kv" },
+      ...[["Track", p.track], ["Attending", p.mode], ["Device", p.device], ["Experience", p.level],
+          ["Goal", p.goal], ["Phone", p.phone], ["Joined", p.createdAt ? new Date(p.createdAt).toLocaleDateString() : null]]
+        .filter(([, v]) => v).flatMap(([k, v]) => [h("dt", { text: k }), h("dd", { text: String(v) })])),
+
+    h("h3", { style: "margin:20px 0 4px", text: "Quiz history" }),
+    attempts.length
+      ? h("div", null, ...attempts.map(r => h("div", { class: "item", style: "cursor:default" },
+          h("span", { class: "it-body" },
+            h("span", { class: "it-title", text: r.quiz }),
+            h("span", { class: "it-sub", text: fmtWhen(r.at) + " · " + r.score + "/" + r.total })),
+          h("span", { class: "pill " + gradeTone(r.grade), text: r.pct + "% · " + r.grade }))))
+      : h("p", { class: "mute", text: "No quiz attempts yet." }),
+
+    p.phone ? h("a", { class: "btn block", style: "margin-top:18px",
+        href: "https://wa.me/" + String(p.phone).replace(/^0/, "234").replace(/\D/g, ""), target: "_blank", rel: "noopener" },
+        "Message on WhatsApp") : null
+  );
+  back.append(sheet);
+  document.body.append(back);
+}
+
+/* =====================================================================
+   VIEW · RESULTS
+   ===================================================================== */
+function resultsView(){
+  const { people, results } = DATA;
+  const nameOf = uid => { const p = people[uid]; return p ? (p.name || p.email || "Unknown") : "Unknown"; };
+
+  const quizzes = ["All quizzes", ...Array.from(new Set(results.map(r => r.quiz))).sort()];
+  if (!quizzes.includes(resultFilter)) resultFilter = "All quizzes";
+
+  const seg = h("div", { class: "seg", style: "overflow-x:auto;max-width:100%" });
+  quizzes.forEach(q => seg.append(h("button", { class: resultFilter === q ? "on" : "",
+    onclick: () => { resultFilter = q; paint(); } }, q === "All quizzes" ? "All" : q)));
+
+  const rows = () => results.filter(r => resultFilter === "All quizzes" || r.quiz === resultFilter);
+  const list = rows();
+  const avg = list.length ? Math.round(list.reduce((s, r) => s + r.pct, 0) / list.length) : 0;
+  const passed = list.filter(r => r.pct >= 50).length;
+
+  const exportBtn = h("button", { class: "btn ghost sm" }, "⇩ Export CSV");
+  exportBtn.onclick = () => {
+    download("rehoteq-results.csv", toCSV([
+      ["Learner","Email","Quiz","Score","Total","Percent","Grade","Date"],
+      ...list.map(r => [nameOf(r.uid), (people[r.uid] || {}).email || "", r.quiz, r.score, r.total, r.pct, r.grade, r.at.toISOString()])
+    ]));
+    toast("Exported " + list.length + " results", "ok");
+  };
+
+  const table = list.length
+    ? h("div", { class: "tbl-wrap" }, h("table", null,
+        h("thead", null, h("tr", null, ...["Learner","Quiz","Score","Result","Grade","When"].map(t => h("th", { text: t })))),
+        h("tbody", null, ...list.map(r => h("tr", { style: "cursor:pointer", onclick: () => openLearner(r.uid) },
+          h("td", { class: "strong" }, h("span", { class: "cell-user" },
+            h("span", { class: "avatar sm", text: initials(nameOf(r.uid)) }), h("span", null, nameOf(r.uid)))),
+          h("td", { class: "mute", text: r.quiz }),
+          h("td", { class: "num", text: r.score + "/" + r.total }),
+          h("td", null, h("span", { class: "mini-bar" }, h("i", { style: "width:" + r.pct + "%" })),
+            h("span", { class: "num", style: "margin-left:8px;font-weight:650", text: r.pct + "%" })),
+          h("td", null, h("span", { class: "pill " + gradeTone(r.grade), text: r.grade })),
+          h("td", { class: "mute", text: fmtWhen(r.at) }))))))
+    : h("div", { class: "card" }, h("div", { class: "empty" },
+        h("div", { class: "em", text: "◇" }), h("b", { text: "No attempts recorded" }),
+        h("div", { class: "mute", text: "Results appear here the moment a learner submits a quiz." })));
+
+  return [
+    h("header", { class: "view-head spread" },
+      h("div", null, h("h1", { text: "Quiz results" }),
+        h("p", { class: "mute", text: "Newest first · up to the last 500 attempts" })),
+      exportBtn),
+    h("div", { class: "grid g3", style: "margin-bottom:14px" },
+      kpi(list.length, "Attempts shown", resultFilter === "All quizzes" ? "all quizzes" : resultFilter, ""),
+      kpi(avg + "%", "Average", "of shown attempts", "gold"),
+      kpi(pctOf(passed, list.length) + "%", "Pass rate", passed + " scored 50% or more", "sky")),
+    h("div", { style: "margin-bottom:12px" }, seg),
+    table
+  ];
+}
+
+/* =====================================================================
+   VIEW · CLASS SETTINGS
+   ===================================================================== */
+function settingsView(){
+  const cfg = DATA.config || {};
+  const next = h("input", { type: "text", placeholder: "Sat 10am · HTML & CSS live lab", value: cfg.next || "", maxlength: 120 });
+  const link = h("input", { type: "url", placeholder: "https://meet.google.com/...", value: cfg.link || "" });
+  const note = h("input", { type: "text", placeholder: "Bring your laptop and a charged phone", value: cfg.note || "", maxlength: 200 });
+  const msg = h("div", { class: "err" });
+  const save = h("button", { class: "btn lg" }, "Publish to every dashboard");
+
+  /* live preview of the learner's card */
+  const preview = h("div", { class: "card", style: "background:var(--softer)" });
+  function drawPreview(){
+    preview.replaceChildren(
+      h("div", { class: "eyebrow", text: "Learner preview" }),
+      h("div", { class: "card", style: "margin-top:10px" },
+        h("div", { class: "card-title" },
+          h("span", { class: "pill ok" }, h("span", { class: "dot-live" }), "Next live class")),
+        h("div", { style: "font-weight:700;font-size:16px", text: next.value.trim() || "Nothing scheduled yet" }),
+        link.value.trim().startsWith("https://")
+          ? h("button", { class: "btn gold block", style: "margin-top:12px", disabled: true }, "Join on Zoom or Meet") : null,
+        note.value.trim()
+          ? h("div", { class: "callout", style: "margin-top:12px" }, h("div", null, h("b", { text: "Announcement " }), note.value.trim())) : null));
+  }
+  [next, link, note].forEach(i => i.oninput = drawPreview);
+  drawPreview();
+
+  save.onclick = async () => {
+    const l = link.value.trim();
+    if (l && !l.startsWith("https://")){ msg.textContent = "The join link must start with https://"; link.focus(); return; }
+    save.disabled = true; save.textContent = "Publishing...";
+    msg.textContent = "";
+    try {
+      const payload = { next: next.value.trim(), link: l, note: note.value.trim(), updatedAt: Date.now() };
+      await F.setDoc(F.doc(db, "config", "classroom"), payload);
+      DATA.config = payload;
+      toast("Published — learners see it on next open", "ok");
+    } catch (e) {
+      msg.textContent = "Could not save. Check your network and admin access.";
+      toast("Save failed", "bad");
+    }
+    save.disabled = false; save.textContent = "Publish to every dashboard";
+  };
+
+  return [
+    h("header", { class: "view-head" },
+      h("h1", { text: "Class settings" }),
+      h("p", { class: "mute", text: "Whatever you write here shows at the top of every learner's dashboard — online and offline." })),
+    h("div", { class: "grid g2", style: "align-items:start" },
+      h("div", { class: "card" },
+        h("label", { class: "field" }, h("span", { class: "lbl", text: "Next live class" }), next,
+          h("span", { class: "hint", text: "Day, time and topic. Keep it short — it is read on a phone." })),
+        h("label", { class: "field" }, h("span", { class: "lbl", text: "Zoom or Meet link" }), link,
+          h("span", { class: "hint", text: "Must start with https:// — it becomes a Join button." })),
+        h("label", { class: "field" }, h("span", { class: "lbl", text: "Announcement (optional)" }), note,
+          h("span", { class: "hint", text: "One line: reminders, deadlines, venue changes." })),
+        msg, save,
+        cfg.updatedAt ? h("p", { class: "faint", style: "margin-top:10px",
+          text: "Last published " + new Date(cfg.updatedAt).toLocaleString() }) : null),
+      preview)
+  ];
+}
+
+/* =====================================================================
+   CSV
+   ===================================================================== */
+function toCSV(rows){
+  const q = v => { v = v === null || v === undefined ? "" : String(v);
+    if (/^[=+\-@]/.test(v)) v = "'" + v;          // spreadsheet injection guard
+    return '"' + v.replace(/"/g, '""') + '"'; };
+  return "\uFEFF" + rows.map(r => r.map(q).join(",")).join("\r\n");
+}
+function download(name, text){
+  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+  const a = h("a", { href: URL.createObjectURL(blob), download: name });
+  document.body.append(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+/* ---------- sticky header shadow ---------- */
+const bar = document.getElementById("topbar");
+addEventListener("scroll", () => bar.classList.toggle("stuck", scrollY > 6), { passive: true });
+</script>
+</body>
+</html>

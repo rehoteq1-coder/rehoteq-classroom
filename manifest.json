@@ -1,14 +1,25 @@
 {
   "name": "Rehoteq Classroom",
   "short_name": "Classroom",
-  "description": "Rehoteq Academy lessons that work on weak networks.",
+  "description": "Rehoteq Academy lessons, labs and timed quizzes that work on weak networks.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f6f8f7",
-  "theme_color": "#0b5d3b",
+  "background_color": "#f3f7f4",
+  "theme_color": "#0b5537",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": [
+    "education"
   ]
 }

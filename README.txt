@@ -1,4 +1,19 @@
-REHOTEQ CLASSROOM V6 - ONBOARDING, LEARNER DASHBOARD, TEACHER DASHBOARD
+REHOTEQ CLASSROOM V7 - ONBOARDING, LEARNER DASHBOARD, TEACHER CONSOLE
+
+WHAT CHANGED IN V7 (interface only - the data model and Firestore rules are unchanged)
+- New shared design system in styles.css. All three pages now use it, so the look is
+  consistent and you only change colours in one place (the :root block at the top).
+- Learner app: tab bar (Learn / Quizzes / Me), progress ring, per-module progress,
+  tickable lab steps saved on the device, redesigned quiz runner with a segmented
+  progress strip and a timer that turns red in the last 30 seconds, and a result
+  screen with a score ring and full review.
+- Onboarding is now three short steps instead of one long form.
+- Teacher console (admin.html) is a real workspace: Overview / Learners / Results /
+  Class settings, KPI cards, average-score bar chart, 14-day activity chart,
+  sortable and searchable learner table, a learner detail sheet with quiz history and
+  a WhatsApp button, and a live preview of what learners will see before you publish.
+- Light / dark / follow-the-phone theme switch, remembered across all three pages.
+- No web fonts and no frameworks were added: the pages still open on a weak network.
 
 JOIN PAGE (new, cleaner sign-up link)
 Share YOUR-LINK/join.html on the flyer, WhatsApp and QR codes. Add ?track=Beginner or ?track=Masterclass to preselect the track.
@@ -64,7 +79,9 @@ STEP 2: MAKE YOURSELF ADMIN (once)
 4. Open YOUR-LINK/admin.html and log in. Then fill in Class settings and Save.
 
 STEP 3: UPLOAD all files to GitHub (replace old ones):
-index.html, join.html, admin.html, sw.js, manifest.json, icon-192.png, icon-512.png, README.txt (optional). sw.js is now v7.
+index.html, join.html, admin.html, styles.css, sw.js, manifest.json, icon-192.png,
+icon-512.png, README.txt (optional). styles.css is NEW - the pages are unstyled without it.
+sw.js is now v8 and caches styles.css too.
 
 STEP 4: REVIEW CHECKLIST
 [ ] Open twice online, then airplane mode: still opens, badge "saved for offline"
@@ -80,11 +97,16 @@ STEP 4: REVIEW CHECKLIST
 [ ] admin.html: learner search, results filter, both CSV exports open in Excel
 [ ] A normal learner cannot open admin.html data ("not an admin")
 [ ] Dark mode and a small screen look right
+[ ] Theme button in the header cycles auto > light > dark and survives a refresh
+[ ] Lab steps stay ticked after you leave a lesson and come back
+[ ] Admin: Overview charts draw, learner table sorts, a learner row opens the detail sheet
+[ ] Admin: Class settings preview updates as you type, then Publish shows on a learner phone
 
 NOTES
 - Quiz answers are inside the page (fine for practice, not for graded exams).
 - Firebase web config is public by design; the rules protect the data.
 - Masterclass learners see a "lessons being added" note. Only Beginner content exists.
 - Learners store name, phone, goal and progress. Keep the consent line and only use the data for the training.
-- To update later change v7 to v8 in sw.js and upload again.
+- To update later change v8 to v9 in sw.js and upload again. Do this every time you edit
+  index.html, join.html, admin.html or styles.css, otherwise phones keep the old cached copy.
 - Not built yet: certificates, Masterclass lessons, audio/video downloads, assignments, attendance QR.
