@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b5d3b"><title>Join Rehoteq Academy</title>
+<link rel="icon" href="icon-192.png">
+<style>
+:root{--bg:#f6f8f7;--card:#fff;--ink:#1b1f23;--mute:#5b6470;--green:#0b5d3b;--gold:#c8961e;--soft:#eaf3ee;--line:#d9e2dc}
+@media (prefers-color-scheme:dark){:root{--bg:#101613;--card:#18211c;--ink:#e8efe9;--mute:#9aa7a0;--green:#3cb27a;--soft:#1e2b24;--line:#2b3a32}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.hero{background:linear-gradient(135deg,#0b5d3b,#0f7a4f);color:#fff;padding:28px 16px 34px;text-align:center}
+.hero .logo{width:48px;height:48px;border-radius:12px;background:#c8961e;color:#1b1f23;display:inline-grid;place-items:center;font-weight:800;font-size:24px}
+.hero h1{margin:10px 0 4px;font-size:24px}.hero p{margin:0;color:#d8ece1;font-size:14px}
+.wrap{max-width:520px;margin:-18px auto 24px;padding:0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.mute{color:var(--mute);font-size:13px}.step{font-size:12px;font-weight:700;color:var(--gold);letter-spacing:.5px}
+h2{margin:2px 0 6px;font-size:18px;color:var(--green)}
+label.l{display:block;margin-top:12px;font-size:13px;color:var(--mute)}
+input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit;margin-top:4px}
+button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px 14px;cursor:pointer;background:var(--green);color:#fff;min-height:44px;width:100%;margin-top:12px}
+button.alt{background:var(--soft);color:var(--green);border:1px solid var(--line)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.ck{display:flex;gap:8px;align-items:flex-start;margin-top:12px}.ck input{width:auto;margin:3px 0 0}
+.err{color:#b3261e;font-size:13px;margin-top:8px;min-height:18px}
+</style></head><body>
+<div class="hero"><span class="logo">R</span><h1>Join Rehoteq Academy</h1><p>Two quick steps, then your personal dashboard.</p></div>
+<div class="wrap"><div class="card" id="root"><div class="mute">Loading...</div></div>
+<p class="mute" style="text-align:center">Rehoteq Technologies, Okitipupa, Ondo State</p></div>
+<script type="module">
+const cfg={apiKey:"AIzaSyAZ12xbUzdzc_5L5JY6d3AlIvPxLKB60TA",authDomain:"rehoteq-classroom.firebaseapp.com",projectId:"rehoteq-classroom",appId:"1:773863865025:web:8b11f1cd911e9cf05b3240"};
+const B="https://www.gstatic.com/firebasejs/10.12.2/",root=document.getElementById("root");
+const $=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e};
+const put=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const getL=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}};
+const ERR={"auth/invalid-credential":"Wrong email or password.","auth/wrong-password":"Wrong email or password.","auth/user-not-found":"No account with that email. Use Create account.","auth/email-already-in-use":"That email already has an account. Choose Log in.","auth/weak-password":"Use at least 6 characters.","auth/invalid-email":"Check the email address.","auth/network-request-failed":"No network. Try again when you have signal.","auth/too-many-requests":"Too many tries. Wait a few minutes."};
+const nice=e=>ERR[e.code]||"Something went wrong. Try again.";
+let Au,F,auth,db;
+try{const [A,a,f]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-auth.js"),import(B+"firebase-firestore.js")]);
+  Au=a;F=f;const app=A.initializeApp(cfg);auth=Au.getAuth(app);db=F.getFirestore(app);Au.onAuthStateChanged(auth,route)}
+catch(e){root.textContent="Could not load. Connect to the internet and refresh this page."}
+function adopt(uid){const lu=getL("rc-uid");if(lu&&lu!==uid)["rc-done","rc-done-t","rc-done-d","rc-results","rc-session","rc-profile","rc-prof-d"].forEach(k=>localStorage.removeItem(k));put("rc-uid",uid)}
+function field(p,label,node){const l=$("label","l",label);l.append(node);p.append(l);return node}
+function accountView(mode){
+  root.replaceChildren();root.append($("div","step","STEP 1 OF 2"),$("h2","",mode==="signup"?"Create your account":"Log in"));
+  root.append($("div","mute","Use an email you can open. You will use it to log in on any phone."));
+  const em=Object.assign($("input"),{type:"email",placeholder:"Email",autocomplete:"email"}),pw=Object.assign($("input"),{type:"password",placeholder:"Password (6+ characters)",autocomplete:mode==="signup"?"new-password":"current-password"});
+  field(root,"Email",em);field(root,"Password",pw);
+  const err=$("div","err"),go=$("button","",mode==="signup"?"Create account":"Log in");
+  go.onclick=async()=>{err.textContent="Please wait...";try{const f=mode==="signup"?Au.createUserWithEmailAndPassword:Au.signInWithEmailAndPassword;await f(auth,em.value.trim(),pw.value)}catch(e){err.textContent=nice(e)}};
+  const sw=$("button","alt",mode==="signup"?"I already have an account":"Create a new account");sw.onclick=()=>accountView(mode==="signup"?"login":"signup");
+  root.append(err,go,sw);
+  if(mode==="login"){const rs=$("button","alt","Forgot password");rs.onclick=async()=>{try{await Au.sendPasswordResetEmail(auth,em.value.trim());err.textContent="Reset email sent. Check your inbox."}catch(e){err.textContent=nice(e)}};root.append(rs)}}
+async function route(u){
+  if(!u){accountView("signup");return}
+  adopt(u.uid);const lp=getL("rc-profile");
+  if(lp&&lp.uid===u.uid){location.replace("./");return}
+  root.textContent="Checking your account...";
+  try{const s=await F.getDoc(F.doc(db,"learners",u.uid));if(s.exists()){put("rc-profile",s.data());put("rc-prof-d",false);location.replace("./");return}}catch(e){}
+  formView(u)}
+function formView(u){
+  root.replaceChildren();root.append($("div","step","STEP 2 OF 2"),$("h2","","Tell us about you"),$("div","mute","One minute. This sets up your dashboard."));
+  const sel=a=>{const s=$("select");s.append(new Option("Choose...",""));a.forEach(x=>s.append(new Option(x,x)));return s};
+  const inp=(t,p,ac)=>Object.assign($("input"),{type:t,placeholder:p,autocomplete:ac||"off"});
+  const f={name:field(root,"Full name",inp("text","Your full name","name")),phone:field(root,"Phone or WhatsApp number",inp("tel","e.g. 08012345678","tel")),
+    track:field(root,"Track",sel(["Beginner","Masterclass"])),mode:field(root,"How will you attend?",sel(["In person (Okitipupa)","Online (Zoom or Google Meet)","Both"])),
+    device:field(root,"Device you will learn on",sel(["Phone","Laptop","Both"])),level:field(root,"Your experience",sel(["Complete beginner","Some experience","I already build projects"])),
+    goal:field(root,"Main goal",sel(["Get skills for a job","Freelance and earn","School or church project","Start my own business","Just learning"]))};
+  const t=new URLSearchParams(location.search).get("track");if(t==="Beginner"||t==="Masterclass")f.track.value=t;
+  const ck=Object.assign($("input"),{type:"checkbox"}),cl=$("label","ck");cl.append(ck,$("span","mute","I agree that Rehoteq Academy stores my name, phone and progress to run my training."));root.append(cl);
+  const err=$("div","err"),go=$("button","","Go to my dashboard");root.append(err,go);
+  go.onclick=async()=>{
+    const v={};for(const k in f)v[k]=f[k].value.trim();v.name=v.name.slice(0,80);const ph=v.phone.replace(/[\s-]/g,"");
+    if(v.name.length<2){err.textContent="Enter your full name.";return}
+    if(!/^\+?\d{10,15}$/.test(ph)){err.textContent="Enter a valid phone number.";return}
+    for(const k in v)if(!v[k]){err.textContent="Please complete every field.";return}
+    if(!ck.checked){err.textContent="Please tick the agreement box.";return}
+    v.phone=ph;v.uid=u.uid;v.createdAt=Date.now();go.disabled=true;err.textContent="Setting up your dashboard...";
+    put("rc-profile",v);put("rc-prof-d",true);
+    try{await Promise.race([F.setDoc(F.doc(db,"learners",u.uid),v),new Promise((_,r)=>setTimeout(()=>r(new Error("slow")),10000))]);put("rc-prof-d",false)}
+    catch(e){err.textContent="Saved on this phone. It will upload when you have signal."}
+    setTimeout(()=>location.replace("./"),err.textContent.startsWith("Saved")?1500:0)}}
+</script></body></html>

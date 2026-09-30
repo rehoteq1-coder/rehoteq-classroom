@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rehoteq Classroom</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b5d3b">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#f6f8f7;--card:#fff;--ink:#1b1f23;--mute:#5b6470;--green:#0b5d3b;--gold:#c8961e;--soft:#eaf3ee;--line:#d9e2dc;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101613;--card:#18211c;--ink:#e8efe9;--mute:#9aa7a0;--green:#3cb27a;--soft:#1e2b24;--line:#2b3a32}}
+:root[data-theme="dark"]{--bg:#101613;--card:#18211c;--ink:#e8efe9;--mute:#9aa7a0;--green:#3cb27a;--soft:#1e2b24;--line:#2b3a32}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5}
+.wrap{max-width:640px;margin:0 auto;padding:16px}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.brand{font-weight:800;color:var(--green);font-size:18px}
+.brand small{display:block;font-weight:500;color:var(--mute);font-size:11px;letter-spacing:.5px}
+.pill{font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;background:var(--soft);color:var(--green);border:1px solid var(--line)}
+.pill.off{background:#fff3d6;color:#7a5a00;border-color:var(--gold)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.bar{height:10px;background:var(--soft);border-radius:99px;overflow:hidden;margin:8px 0}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--green),var(--gold));width:0;transition:width .3s}
+h1{font-size:20px;margin:0 0 4px}h2{font-size:15px;margin:0 0 8px;color:var(--green)}h3{font-size:14px;margin:14px 0 6px;color:var(--gold)}
+.mute{color:var(--mute);font-size:13px}
+button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px 14px;cursor:pointer;background:var(--green);color:#fff;min-height:44px}
+button.alt{background:var(--soft);color:var(--green);border:1px solid var(--line)}
+button.done{background:var(--gold);color:#1b1f23}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}
+.item{display:flex;align-items:center;gap:10px;padding:12px 4px;border-top:1px solid var(--line);cursor:pointer}
+.item:first-of-type{border-top:0}
+.dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:13px;color:#fff;flex:none}
+.dot.ok{background:var(--green);border-color:var(--green)}
+ul,ol{padding-left:20px;margin:6px 0}li{margin:5px 0}
+.note{font-size:12px;color:var(--mute);text-align:center;margin-top:14px}
+.inp{width:100%;padding:12px;margin:4px 0;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit}
+.card{box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.top{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line)}
+.logo{width:34px;height:34px;border-radius:9px;background:var(--green);color:#fff;display:grid;place-items:center;font-weight:800;flex:none}
+.hero{background:linear-gradient(135deg,#0b5d3b,#0f7a4f);color:#fff;border:0}
+.hero .mute{color:#d8ece1}.hero .bar{background:rgba(255,255,255,.25)}.hero .bar i{background:var(--gold)}
+.hero button{background:var(--gold);color:#1b1f23}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 4px}
+.stat{background:rgba(255,255,255,.14);border-radius:10px;padding:8px;text-align:center}.stat b{display:block;font-size:20px}
+button:focus-visible,.item:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="top"><div class="wrap" style="padding-top:10px;padding-bottom:10px">
+<header style="margin:0">
+  <div class="brand" style="display:flex;gap:10px;align-items:center"><span class="logo">R</span><span>Rehoteq Classroom<small>ACADEMY &middot; V6</small></span></div>
+  <span style="display:flex;gap:6px;align-items:center"><button id="inst" class="alt" hidden style="min-height:36px;padding:6px 12px">Install</button><span id="net" class="pill">Online</span></span>
+</header></div></div>
+<div class="wrap"><main id="app"></main>
+<p class="note">Progress is saved on this device first. Built for weak networks.</p>
+</div>
+<script>
+var LESSONS=[
+{m:"B1 Digital foundations",t:"Inside the computer",pts:["CPU is the brain. RAM is short-term memory and is cleared when power goes off. Storage (HDD or SSD) keeps files long-term.","The operating system manages the hardware and runs your apps.","A computer feels slow when RAM is small, storage is almost full, too many apps start at boot, or malware is present."],lab:["Open Settings, About, and write down your processor, RAM and OS.","Open Task Manager (Ctrl + Shift + Esc) and look at Startup.","Disable two startup apps you do not need."]},
+{m:"B1 Digital foundations",t:"Files, folders and backup",pts:["Name files in lowercase with hyphens and put the date first when order matters, for example result-jss1-2026-09-28.xlsx.","3-2-1 backup: keep 3 copies, on 2 types of storage, with 1 copy away from your computer.","Shortcuts: Ctrl+C copy, Ctrl+V paste, Ctrl+Z undo, Ctrl+S save."],lab:["Create the folder Rehoteq-Academy with sub-folders for each module.","Copy it to a flash drive and to Google Drive.","Delete one file and restore it from your backup."]},
+{m:"B1 Digital foundations",t:"How websites work",pts:["Your browser asks DNS for the server address, then the server sends HTML, CSS, JavaScript and images.","HTTPS means the connection is encrypted. It does not prove a site is honest.","Big pages fail more often on weak networks, so we build small."],lab:["Open Chrome DevTools (F12) and the Network tab.","Reload a page and write the requests and total size.","Set throttling to Slow 3G and reload again."]},
+{m:"B2 HTML and CSS",t:"HTML structure",pts:["Elements use tags. Attributes add detail. Every page has a doctype, head and body.","Use one h1 per page, lists for lists, and alt text on every image.","Semantic tags (header, main, section, footer) explain the page."],lab:["Create index.html with a header, an about section and a footer.","Add one image under 150 KB with alt text.","Add a contact form with labels."]},
+{m:"B2 HTML and CSS",t:"CSS layout",pts:["The box model, inside to outside: content, padding, border, margin.","Flexbox lines items up. Grid makes rows and columns.","repeat(auto-fit, minmax(220px, 1fr)) makes cards wrap on any screen."],lab:["Build a school landing page with a hero and three cards.","Resize the window and fix any overflow.","Change colours and fonts to suit your school."]},
+{m:"B2 HTML and CSS",t:"Mobile-first and speed",pts:["Design for the phone first, then enlarge with min-width media queries.","Resize and compress images. Target: under 300 KB per page.","Test on throttled Slow 3G before you share your link."],lab:["Measure your page size in the Network tab.","Compress the largest images and measure again.","Write the before and after sizes in your notebook."]},
+{m:"B3 JavaScript essentials",t:"Variables, conditions, functions",pts:["const holds a value that will not change; let holds one that can.","if / else lets the program choose. A function is a reusable block of steps.","Always check input: Number('abc') gives NaN."],lab:["Write a grade(score) function using the A1 to F9 scale.","Test with 82, 68, 49 and 20.","Test bad input: abc, -5, 150."]},
+{m:"B3 JavaScript essentials",t:"Arrays, objects and the DOM",pts:["An array is a list; push adds, splice removes, filter searches.","An object groups details, for example { name, score }.","Use textContent, not innerHTML, to show user text. A render() function redraws the list."],lab:["Build a student list with Add and Remove.","Add a search box using filter.","Add a sort-by-score button."]},
+{m:"B3 JavaScript essentials",t:"Events, forms and localStorage",pts:["addEventListener reacts to clicks and form submits; preventDefault stops a page reload.","localStorage keeps text after refresh. Convert with JSON.stringify and JSON.parse.","localStorage is not secure. Never store passwords in it."],lab:["Build a 10-question quiz that saves progress.","Refresh mid-quiz and continue.","Add a Restart button."]},
+{m:"B4 Git and hosting",t:"Git, GitHub and Pages",pts:["Git records history on your computer; GitHub stores a copy online.","add stages changes, commit saves a snapshot with a clear message, push sends it up.","GitHub Pages serves your site free. Never commit passwords or key files."],lab:["Run git init, add and commit in a project.","Push to a new GitHub repository.","Turn on Pages and open the live link."]},
+{m:"B5 Firebase basics",t:"Accounts, data and rules",pts:["Authentication proves who a user is; security rules decide what they may do.","Firestore stores documents inside collections. Start in production mode.","Your Firebase web config is public by design. Rules protect the data."],lab:["Create a project and enable Email/Password.","Add sign-up and login to your quiz.","Write rules, then try to break them."]},
+{m:"B6 Mini CBT",t:"Build a test that survives network drops",pts:["Keep every question in the same shape: text, options, answer, explanation.","Build the timer from an end time and auto-submit at zero.","Save on the device first, then send. A fixed result ID makes retries safe."],lab:["Import 50 questions from a CSV.","Run a timed test with shuffled questions.","Switch the network off mid-test and confirm nothing is lost."]},
+{m:"B7 Cyber hygiene",t:"Stay safe online",pts:["Use long, unique passwords and turn on 2-step verification. Authenticator apps beat SMS.","Phishing uses pressure and fake links. Your bank never asks for your PIN or OTP.","Install apps only from the official store and review app permissions."],lab:["Audit 5 accounts and turn on 2FA for Google and GitHub.","Review 10 app permissions and restrict at least 3.","Draft a one-page data policy for a mock school."]}
+];
+var K="rc-done",L="rc-last",app=document.getElementById("app"),net=document.getElementById("net");
+function get(k,d){try{var v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}}
+function set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+var done=get(K,[]),last=get(L,0),stamp=get(K+"-t",0),dirty=get(K+"-d",false),user=null,fb=null,syncMsg="",view="home",authReady=false,fbFail=false;
+/* ===== PASTE YOUR FIREBASE WEB CONFIG HERE (see README) ===== */
+var FIREBASE_CONFIG={apiKey:"AIzaSyAZ12xbUzdzc_5L5JY6d3AlIvPxLKB60TA",authDomain:"rehoteq-classroom.firebaseapp.com",projectId:"rehoteq-classroom",appId:"1:773863865025:web:8b11f1cd911e9cf05b3240"};
+var FBV="10.12.2",CONFIGURED=FIREBASE_CONFIG.apiKey.indexOf("PASTE")!==0;
+var QZ={
+B1:{name:"B1 Digital foundations",secs:240,q:[
+{t:"Which part is the computer's short-term working memory?",o:["Storage","RAM","Power supply"],a:1,e:"RAM is fast temporary memory. It clears when the power goes off."},
+{t:"Which is usually faster, an HDD or an SSD?",o:["HDD","SSD"],a:1,e:"An SSD has no moving parts and is much faster."},
+{t:"The 3-2-1 backup rule means:",o:["3 copies, 2 types of storage, 1 away from the computer","3 folders, 2 drives, 1 password","3 clouds, 2 phones, 1 laptop"],a:0,e:"Keep 3 copies on 2 kinds of storage, with 1 copy somewhere else."},
+{t:"What does DNS do?",o:["Turns a domain name into a server address","Makes your phone faster","Encrypts your password"],a:0,e:"DNS is the phone book that finds the server for a domain name."},
+{t:"Which DevTools tab shows the files a page loads?",o:["Console","Network","Elements"],a:1,e:"The Network tab lists every file with its size and time."}]},
+B2:{name:"B2 HTML and CSS",secs:240,q:[
+{t:"Which tag makes the main page heading?",o:["h1","p","a"],a:0,e:"Use one h1 per page for the main heading."},
+{t:"Which attribute describes an image in words?",o:["src","alt","href"],a:1,e:"Alt text helps screen readers and shows when an image cannot load."},
+{t:"The box model from the outside in is:",o:["margin, border, padding, content","content, margin, padding, border","padding, content, margin, border"],a:0,e:"Margin is outside, then border, then padding, then content."},
+{t:"Which CSS makes a flex container?",o:["display: flex","flex: display","layout: flex"],a:0,e:"display: flex turns an element into a flex container."},
+{t:"What is our page size target?",o:["Under 300 KB","Under 30 MB","Any size"],a:0,e:"Small pages load better on weak networks and cost less data."}]},
+B3:{name:"B3 JavaScript essentials",secs:240,q:[
+{t:"Which keyword declares a value that cannot be reassigned?",o:["let","const"],a:1,e:"const cannot be reassigned."},
+{t:"What does Number('abc') return?",o:["0","NaN","abc"],a:1,e:"NaN means not a number."},
+{t:"Which is safer for showing user text on a page?",o:["innerHTML","textContent"],a:1,e:"textContent never runs harmful code."},
+{t:"localStorage stores:",o:["Only text (strings)","Images only"],a:0,e:"Convert objects with JSON.stringify before saving."},
+{t:"What does preventDefault() do on a form submit?",o:["Stops the page reloading","Deletes the form"],a:0,e:"It lets your code handle the submit without a reload."}]},
+B4:{name:"B4 Git and hosting",secs:240,q:[
+{t:"Which command saves a snapshot with a message?",o:["git add","git commit -m","git pull"],a:1,e:"commit saves the snapshot; add only stages it."},
+{t:"Which file lists things Git must ignore?",o:[".gitignore","readme.txt"],a:0,e:"Put passwords and key files in .gitignore."},
+{t:"What does git push do?",o:["Sends commits to GitHub","Deletes history"],a:0,e:"push uploads your commits."},
+{t:"Which DNS record points a subdomain to another name?",o:["CNAME","MX"],a:0,e:"A CNAME record points one name to another."},
+{t:"Which must never be committed to a public repository?",o:["Passwords and key files","HTML files","Images"],a:0,e:"Secrets in public repos can be found by anyone."}]},
+B5:{name:"B5 Firebase basics",secs:240,q:[
+{t:"Which service proves who a user is?",o:["Authentication","Hosting"],a:0,e:"Authentication handles sign-up and login."},
+{t:"What protects your Firestore data?",o:["Security rules","Hiding the config"],a:0,e:"The web config is public by design; rules do the protecting."},
+{t:"Why start a new database in production mode?",o:["Nothing is open by accident","It is faster"],a:0,e:"Production mode denies everything until you write rules."},
+{t:"Which function gives live updates?",o:["onSnapshot","addDoc"],a:0,e:"onSnapshot listens for changes."},
+{t:"The rule allow read: if request.auth != null lets:",o:["Any signed-in user read","Everyone read"],a:0,e:"Only signed-in users pass that check."}]},
+B6:{name:"B6 Mini CBT",secs:240,q:[
+{t:"Why build the timer from an end time?",o:["It stays accurate if the page pauses","It uses less code"],a:0,e:"The clock keeps counting even if the page sleeps."},
+{t:"Rule for surviving network drops:",o:["Save on the device first, then send","Send first, then save"],a:0,e:"Local first means nothing is lost."},
+{t:"Why give each result a fixed ID?",o:["Retries do not create duplicates","It is faster"],a:0,e:"Saving the same ID twice overwrites, not duplicates."},
+{t:"Which method fairly shuffles an array?",o:["Fisher-Yates","Alphabetical sort"],a:0,e:"Fisher-Yates gives an unbiased shuffle."},
+{t:"Where do real exams keep the answers?",o:["On the server","In browser code"],a:0,e:"Anything in browser code can be read by students."}]},
+B7:{name:"B7 Cyber hygiene",secs:240,q:[
+{t:"A strong password is:",o:["Long and unique","Your name and birth year"],a:0,e:"Length and uniqueness matter most."},
+{t:"Which 2-step verification is generally stronger?",o:["Authenticator app","SMS code"],a:0,e:"SMS can be lost to SIM-swap fraud."},
+{t:"Your bank asks for your OTP by message. You:",o:["Never share it","Send it quickly"],a:0,e:"Banks never ask for your OTP or PIN."},
+{t:"What is least privilege?",o:["Each person gets only the access they need","Everyone shares one login"],a:0,e:"Less access means less damage when something goes wrong."},
+{t:"Where should you install apps from?",o:["The official store","Any link sent to you"],a:0,e:"Unknown APKs are a common way malware spreads."}]}};
+var SK="rc-session",RK="rc-results",OK="rc-out",session=get(SK,null),results=get(RK,[]),outbox=get(OK,[]),tick=null,sending=false,lastR=null;
+function range(n){var r=[];for(var i=0;i<n;i++)r.push(i);return r}
+function shuf(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function uid8(){return(window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2,10)}
+function gradeOf(p){return p>=75?"A1":p>=70?"B2":p>=65?"B3":p>=60?"C4":p>=55?"C5":p>=50?"C6":p>=45?"D7":p>=40?"E8":"F9"}
+function render(){if(view==="onboard")return;view==="home"?home():view==="quiz"?showQuiz():view==="result"?showResult(lastR):open(view)}
+var profile=get("rc-profile",null),cfgc=get("rc-cfg",null),profDirty=get("rc-prof-d",false),profChecked=false;
+function avgq(){return results.length?Math.round(results.reduce(function(s,r){return s+r.pct},0)/results.length):0}
+function validProfile(){return !!(user&&profile&&profile.uid===user.uid)}
+function pushProfile(){
+  if(!fb||!user||!validProfile()||!profDirty||!navigator.onLine)return;
+  var slow=new Promise(function(_,r){setTimeout(function(){r(new Error("slow"))},15000)});
+  Promise.race([fb.setDoc(fb.doc(fb.db,"learners",user.uid),profile),slow]).then(function(){profDirty=false;set("rc-prof-d",false)}).catch(function(){});
+}
+function loadProfile(){
+  if(!fb||!user)return;
+  if(!navigator.onLine||validProfile()){profChecked=true;pushProfile()}
+  if(!navigator.onLine)return;
+  fb.getDoc(fb.doc(fb.db,"learners",user.uid)).then(function(s){
+    profChecked=true;
+    if(s.exists()&&!profDirty){profile=s.data();set("rc-profile",profile)}
+    if(view==="onboard"&&validProfile())view="home";render();
+  }).catch(function(){profChecked=true;render()});
+  fb.getDoc(fb.doc(fb.db,"config","classroom")).then(function(s){if(s.exists()){cfgc=s.data();set("rc-cfg",cfgc);if(view==="home")render()}}).catch(function(){});
+}
+function classCard(){
+  var d=el("div");if(!validProfile())return d;
+  var c=el("div","card");
+  if(cfgc&&cfgc.next){c.appendChild(el("h2","","Next live class"));var t=el("div");t.textContent=cfgc.next;c.appendChild(t);
+    if(cfgc.link&&String(cfgc.link).indexOf("https://")===0){var j=el("button","","Join on Zoom or Meet");j.style.marginTop="8px";j.onclick=function(){window.open(cfgc.link,"_blank","noopener")};c.appendChild(j)}}
+  if(cfgc&&cfgc.note){var n=el("div","mute");n.textContent="Announcement: "+cfgc.note;n.style.marginTop="8px";c.appendChild(n)}
+  if(profile.track==="Masterclass"){var m=el("div","mute","Masterclass lessons are being added. Start with the Beginner lessons below as your foundation.");m.style.marginTop="8px";c.appendChild(m)}
+  return c.children.length?c:d;
+}
+function showOnboarding(){
+  view="onboard";app.innerHTML="";window.scrollTo(0,0);
+  var c=el("div","card");c.appendChild(el("h1","","Welcome to Rehoteq Academy"));
+  c.appendChild(el("div","mute","Tell us about you. It takes one minute and sets up your dashboard."));app.appendChild(c);
+  var f=el("div","card"),F2={};
+  function add(k,label,node){var l=el("div","mute",label);l.style.marginTop="10px";f.appendChild(l);node.style.cssText="width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit;margin-top:4px";f.appendChild(node);F2[k]=node}
+  function inp(t,ph){var i=el("input");i.type=t;i.placeholder=ph;return i}
+  function sel(a){var s=el("select");s.appendChild(new Option("Choose...",""));a.forEach(function(x){s.appendChild(new Option(x,x))});return s}
+  add("name","Full name",inp("text","Your full name"));
+  add("phone","Phone or WhatsApp number",inp("tel","e.g. 08012345678"));
+  add("track","Track",sel(["Beginner","Masterclass"]));
+  add("mode","How will you attend?",sel(["In person (Okitipupa)","Online (Zoom or Google Meet)","Both"]));
+  add("device","Device you will learn on",sel(["Phone","Laptop","Both"]));
+  add("level","Your experience",sel(["Complete beginner","Some experience","I already build projects"]));
+  add("goal","Main goal",sel(["Get skills for a job","Freelance and earn","School or church project","Start my own business","Just learning"]));
+  var ck=el("input");ck.type="checkbox";var cl=el("label","mute");cl.style.cssText="display:flex;gap:8px;margin-top:12px;align-items:flex-start";
+  cl.appendChild(ck);cl.appendChild(document.createTextNode("I agree that Rehoteq Academy stores my name, phone and progress to run my training."));f.appendChild(cl);
+  var msg=el("div","mute");msg.style.margin="8px 0";f.appendChild(msg);
+  var go=el("button","","Go to my dashboard");go.style.width="100%";
+  go.onclick=function(){
+    var v={},k;for(k in F2)v[k]=F2[k].value.trim();v.name=v.name.slice(0,80);
+    var ph=v.phone.replace(/[\s-]/g,"");
+    if(v.name.length<2){msg.textContent="Enter your full name.";return}
+    if(!/^\+?\d{10,15}$/.test(ph)){msg.textContent="Enter a valid phone number.";return}
+    for(k in v){if(!v[k]){msg.textContent="Please complete every field.";return}}
+    if(!ck.checked){msg.textContent="Please tick the agreement box.";return}
+    v.phone=ph;v.uid=user.uid;v.createdAt=Date.now();profile=v;set("rc-profile",v);profDirty=true;set("rc-prof-d",true);
+    pushProfile();view="home";home();
+  };
+  f.appendChild(go);app.appendChild(f);
+}
+
+function startQuiz(k){
+  var Q=QZ[k];
+  session={id:uid8(),key:k,end:Date.now()+Q.secs*1000,i:0,ans:{},order:shuf(range(Q.q.length)).map(function(q){return{q:q,o:shuf(range(Q.q[q].o.length))}})};
+  set(SK,session);showQuiz();
+}
+function runTimer(){
+  clearInterval(tick);
+  function u(){var e=document.getElementById("tm");if(!e||!session){clearInterval(tick);return}
+    var l=Math.max(0,session.end-Date.now()),m=Math.floor(l/60000),s=Math.floor(l%60000/1000);
+    e.textContent=m+":"+(s<10?"0":"")+s;if(l===0){clearInterval(tick);finish()}}
+  u();tick=setInterval(u,1000);
+}
+function showQuiz(){
+  if(!session){home();return}
+  if(Date.now()>=session.end){finish();return}
+  view="quiz";app.innerHTML="";window.scrollTo(0,0);
+  var Q=QZ[session.key],it=session.order[session.i],q=Q.q[it.q],n=session.order.length;
+  var c=el("div","card"),top=el("div","row");top.style.alignItems="center";
+  top.appendChild(el("span","mute","Question "+(session.i+1)+" of "+n));
+  var tm=el("strong");tm.id="tm";tm.style.textAlign="right";top.appendChild(tm);c.appendChild(top);
+  var h=el("h1");h.style.marginTop="10px";h.textContent=q.t;c.appendChild(h);
+  it.o.forEach(function(oi){
+    var b=el("button",session.ans[it.q]===oi?"":"alt");b.textContent=q.o[oi];
+    b.style.cssText="width:100%;margin-top:8px;text-align:left";
+    b.onclick=function(){session.ans[it.q]=oi;set(SK,session);showQuiz()};c.appendChild(b)});
+  app.appendChild(c);
+  var left=n-Object.keys(session.ans).length,last=session.i===n-1;
+  var row=el("div","row"),p=el("button","alt","Previous"),nx=el("button","",last?"Submit"+(left?" ("+left+" unanswered)":""):"Next");
+  p.disabled=session.i===0;p.style.opacity=session.i===0?.5:1;
+  p.onclick=function(){session.i--;set(SK,session);showQuiz()};
+  nx.onclick=function(){if(last)finish();else{session.i++;set(SK,session);showQuiz()}};
+  row.appendChild(p);row.appendChild(nx);app.appendChild(row);
+  var hm=el("button","alt","Home (timer keeps running)");hm.style.cssText="width:100%;margin-top:8px";hm.onclick=function(){clearInterval(tick);home()};app.appendChild(hm);
+  runTimer();
+}
+function finish(){
+  clearInterval(tick);if(!session)return;
+  var Q=QZ[session.key],sc=0;
+  session.order.forEach(function(it){if(session.ans[it.q]===Q.q[it.q].a)sc++});
+  var tot=Q.q.length,p=Math.round(sc/tot*100);
+  var r={id:session.id,quiz:session.key,score:sc,total:tot,pct:p,grade:gradeOf(p),takenAt:Date.now(),ans:session.ans,order:session.order};
+  results.unshift(r);results=results.slice(0,20);set(RK,results);
+  outbox.push({id:r.id,quiz:r.quiz,score:r.score,total:r.total,pct:r.pct,grade:r.grade,takenAt:r.takenAt,owner:user?user.uid:null});set(OK,outbox);
+  session=null;try{localStorage.removeItem(SK)}catch(e){}
+  showResult(r);syncResults();
+}
+function showResult(r){
+  lastR=r;view="result";app.innerHTML="";window.scrollTo(0,0);
+  var c=el("div","card");c.appendChild(el("div","mute",QZ[r.quiz].name+" quiz"));
+  c.appendChild(el("h1","",r.score+" / "+r.total+" ("+r.pct+"%) Grade "+r.grade));
+  var s=el("div","mute");s.id="qsync";s.textContent="Saved on this phone.";c.appendChild(s);app.appendChild(c);
+  var Q=QZ[r.quiz],rv=el("div","card");rv.appendChild(el("h2","","Review"));
+  (r.order||[]).forEach(function(it,i){
+    var q=Q.q[it.q],mine=r.ans[it.q],ok=mine===q.a,d=el("div","");d.style.cssText="padding:10px 0;border-top:1px solid var(--line)";
+    var t=el("strong");t.textContent=(i+1)+". "+q.t;d.appendChild(t);
+    var y=el("div","mute");y.textContent=(ok?"Correct: ":"Your answer: ")+(mine===undefined?"(no answer)":q.o[mine]);d.appendChild(y);
+    if(!ok){var g=el("div","");g.style.color="var(--green)";g.textContent="Right answer: "+q.o[q.a];d.appendChild(g)}
+    var e=el("div","mute");e.textContent=q.e;d.appendChild(e);rv.appendChild(d)});
+  app.appendChild(rv);
+  var row=el("div","row"),rt=el("button","","Try again"),hm=el("button","alt","All lessons");
+  rt.onclick=function(){startQuiz(r.quiz)};hm.onclick=home;row.appendChild(rt);row.appendChild(hm);app.appendChild(row);
+  syncResults();
+}
+function syncResults(){
+  function m(t){var e=document.getElementById("qsync");if(e)e.textContent=t}
+  if(!outbox.length){m("Saved online.");return}
+  if(!CONFIGURED||!fb||!user){m(CONFIGURED?"Saved on this phone. Log in to save it online.":"Saved on this phone.");return}
+  if(!navigator.onLine){m("Saved on this phone. Will send when online.");return}
+  if(sending)return;sending=true;m("Sending...");
+  var item=null,data={},k;outbox.forEach(function(x){if(!item&&(x.owner==null||x.owner===user.uid))item=x});
+  if(!item){m("Saved online.");return}
+  for(k in item)if(k!=="owner")data[k]=item[k];data.uid=user.uid;
+  var slow=new Promise(function(_,rj){setTimeout(function(){rj(new Error("slow"))},15000)});
+  Promise.race([fb.setDoc(fb.doc(fb.db,"results",item.id),data),slow]).then(function(){
+    outbox=outbox.filter(function(x){return x.id!==item.id});set(OK,outbox);sending=false;syncResults();
+  }).catch(function(){sending=false;m("Saved on this phone. Will retry.")});
+}
+function quizCard(){
+  var c=el("div","card");c.appendChild(el("h2","","Quizzes"));
+  if(session){var rs=el("button","","Resume "+QZ[session.key].name+" quiz");rs.onclick=showQuiz;c.appendChild(rs);
+    var sp=el("div","mute","Time keeps running while you are away.");sp.style.margin="6px 0 10px";c.appendChild(sp)}
+  Object.keys(QZ).forEach(function(k){
+    var Q=QZ[k],b=null;results.forEach(function(x){if(x.quiz===k&&(b===null||x.pct>b))b=x.pct});
+    var it=el("div","item"),w=el("div");w.innerHTML="<strong></strong><div class='mute'></div>";
+    w.firstChild.textContent=Q.name+" quiz";w.lastChild.textContent=Q.q.length+" questions, "+Math.round(Q.secs/60)+" minutes"+(b!==null?" | Best "+b+"%":"");
+    it.appendChild(w);it.onclick=function(){session?showQuiz():startQuiz(k)};c.appendChild(it)});
+  if(results.length){var h=el("div","mute","Recent: "+results.slice(0,3).map(function(x){return x.quiz+" "+x.score+"/"+x.total+" ("+new Date(x.takenAt).toLocaleDateString()+")"}).join("  |  "));h.style.marginTop="8px";c.appendChild(h)}
+  return c;
+}
+function save(){stamp=Date.now();dirty=true;set(K,done);set(K+"-t",stamp);set(K+"-d",true);sync()}
+function say(m){syncMsg=m;var e=document.getElementById("sync");if(e)e.textContent=m}
+function sync(){
+  syncResults();pushProfile();
+  if(!fb||!user)return;
+  if(!navigator.onLine){say(dirty?"Saved on phone. Will sync when online.":"");return}
+  say("Syncing...");
+  var ref=fb.doc(fb.db,"users",user.uid);
+  var slow=new Promise(function(_,r){setTimeout(function(){r(new Error("slow"))},15000)});
+  Promise.race([fb.getDoc(ref),slow]).then(function(snap){
+    var c=snap.exists()?snap.data():null;
+    if(c&&c.updatedAt>stamp){done=c.done||[];stamp=c.updatedAt;dirty=false;set(K,done);set(K+"-t",stamp);set(K+"-d",false);render()}
+    else if(dirty||!c){return Promise.race([fb.setDoc(ref,{done:done,updatedAt:stamp,email:user.email||""}),slow]).then(function(){dirty=false;set(K+"-d",false)})}
+  }).then(function(){say("Saved online")}).catch(function(){say("Saved on phone. Will retry.")});
+}
+function nice(e){var m={"auth/invalid-credential":"Wrong email or password.","auth/wrong-password":"Wrong email or password.","auth/user-not-found":"No account with that email. Tap Sign up.","auth/email-already-in-use":"That email already has an account. Tap Log in.","auth/weak-password":"Use at least 6 characters.","auth/invalid-email":"Check the email address.","auth/network-request-failed":"No network. Try again when you have signal.","auth/too-many-requests":"Too many tries. Wait a few minutes."};return m[e.code]||"Something went wrong. Try again."}
+function account(){
+  var c=el("div","card");c.appendChild(el("h2","","Account"));
+  if(!CONFIGURED){c.appendChild(el("div","mute","Login is not set up yet. You can still learn; progress saves on this device."));return c}
+  if(!fb||!authReady){c.appendChild(el("div","mute",fbFail?"Login needs internet the first time. You can keep learning offline.":"Checking login..."));return c}
+  if(user){
+    var d=el("div","","Signed in as <strong></strong>");d.querySelector("strong").textContent=user.email;c.appendChild(d);
+    var s=el("div","mute");s.id="sync";s.textContent=syncMsg;c.appendChild(s);
+    var o=el("button","alt","Log out");o.style.marginTop="8px";o.onclick=function(){fb.signOut(fb.auth)};c.appendChild(o);return c}
+  c.appendChild(el("div","mute","Log in to save your progress online and use it on any device."));
+  var em=el("input","inp");em.type="email";em.placeholder="Email";em.autocomplete="email";
+  var pw=el("input","inp");pw.type="password";pw.placeholder="Password (6+ characters)";pw.autocomplete="current-password";
+  var msg=el("div","mute");msg.style.margin="6px 0";
+  function run(fn){msg.textContent="Please wait...";fn().catch(function(e){msg.textContent=nice(e)})}
+  var row=el("div","row"),li=el("button","","Log in"),su=el("button","alt","Sign up"),rs=el("button","alt","Forgot password");
+  li.onclick=function(){run(function(){return fb.signIn(fb.auth,em.value.trim(),pw.value)})};
+  su.onclick=function(){run(function(){return fb.signUp(fb.auth,em.value.trim(),pw.value)})};
+  rs.onclick=function(){run(function(){return fb.reset(fb.auth,em.value.trim()).then(function(){msg.textContent="Reset email sent. Check your inbox."})})};
+  row.appendChild(li);row.appendChild(su);rs.style.marginTop="8px";rs.style.width="100%";
+  [em,pw,msg,row,rs].forEach(function(n){c.appendChild(n)});return c}
+function boot(){
+  if(!CONFIGURED)return;
+  var b="https://www.gstatic.com/firebasejs/"+FBV+"/";
+  Promise.all([import(b+"firebase-app.js"),import(b+"firebase-auth.js"),import(b+"firebase-firestore.js")]).then(function(m){
+    var a=m[0].initializeApp(FIREBASE_CONFIG),au=m[1].getAuth(a);
+    fb={auth:au,db:m[2].getFirestore(a),doc:m[2].doc,getDoc:m[2].getDoc,setDoc:m[2].setDoc,signIn:m[1].signInWithEmailAndPassword,signUp:m[1].createUserWithEmailAndPassword,signOut:m[1].signOut,reset:m[1].sendPasswordResetEmail};
+    m[1].onAuthStateChanged(au,function(u){if(u){var lu=get("rc-uid",null);if(lu&&lu!==u.uid){done=[];stamp=0;dirty=false;set(K,[]);set(K+"-t",0);set(K+"-d",false);results=[];set(RK,[]);profile=null;set("rc-profile",null);profDirty=false;set("rc-prof-d",false);session=null;try{localStorage.removeItem(SK)}catch(e){}}set("rc-uid",u.uid)}user=u;authReady=true;profChecked=false;if(!u&&view==="onboard")view="home";if(u){sync();loadProfile()}render()});
+  }).catch(function(){fbFail=true;render()});
+}
+function pct(){return Math.round(done.length/LESSONS.length*100)}
+function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!==undefined)e.innerHTML=h;return e}
+function home(){
+  view="home";app.innerHTML="";
+  if(user&&!validProfile()){
+    if(!profChecked){var wl=el("div","card");wl.appendChild(el("div","mute","Loading your dashboard..."));app.appendChild(wl);return}
+    showOnboarding();return}
+  var c=el("div","card hero");var hh=el("h1");hh.textContent=validProfile()?"Hello, "+profile.name.split(" ")[0]:"Welcome back";c.appendChild(hh);if(validProfile()){var tg=el("div","mute");tg.textContent=profile.track+" track | "+profile.mode;c.appendChild(tg)}
+  var st=el("div","stats");[[done.length+"/"+LESSONS.length,"Lessons"],[results.length,"Quizzes"],[avgq()+"%","Avg score"]].forEach(function(x){var d=el("div","stat");d.appendChild(el("b","",String(x[0])));d.appendChild(el("span","mute",x[1]));st.appendChild(d)});c.appendChild(st);
+  var b=el("div","bar");b.setAttribute("role","progressbar");b.setAttribute("aria-valuenow",pct());b.appendChild(el("i"));b.firstChild.style.width=pct()+"%";c.appendChild(b);
+  var nxt=LESSONS.findIndex(function(_,i){return done.indexOf(i)<0});
+  var go=el("button","",done.length===LESSONS.length?"Review lessons":(done.length?"Continue: "+LESSONS[nxt<0?0:nxt].t:"Start learning"));
+  go.onclick=function(){open(done.length===LESSONS.length?0:(nxt<0?last:nxt))};c.appendChild(go);app.appendChild(c);app.appendChild(classCard());app.appendChild(account());app.appendChild(quizCard());
+  var mod="",card=null;
+  LESSONS.forEach(function(l,i){
+    if(l.m!==mod){mod=l.m;card=el("div","card");card.appendChild(el("h2","",mod));app.appendChild(card)}
+    var it=el("div","item"),d=el("span","dot"+(done.indexOf(i)>=0?" ok":""),done.indexOf(i)>=0?"&#10003;":"");
+    var t=el("div","","<strong>"+(i+1)+". "+l.t+"</strong>");it.appendChild(d);it.appendChild(t);
+    it.onclick=function(){open(i)};card.appendChild(it)});
+}
+function open(i){
+  last=i;view=i;set(L,i);var l=LESSONS[i];app.innerHTML="";window.scrollTo(0,0);
+  var c=el("div","card");c.appendChild(el("div","mute",l.m+" &middot; Lesson "+(i+1)+" of "+LESSONS.length));c.appendChild(el("h1","",l.t));
+  c.appendChild(el("h3","","Key ideas"));var u=el("ul");l.pts.forEach(function(p){u.appendChild(el("li","",p))});c.appendChild(u);
+  c.appendChild(el("h3","","Lab"));var o=el("ol");l.lab.forEach(function(p){o.appendChild(el("li","",p))});c.appendChild(o);app.appendChild(c);
+  var isDone=done.indexOf(i)>=0,m=el("button",isDone?"done":"",isDone?"Completed (tap to undo)":"Mark complete");
+  m.onclick=function(){var j=done.indexOf(i);if(j>=0)done.splice(j,1);else done.push(i);save();open(i)};
+  var row=el("div","row"),p=el("button","alt","Previous"),n=el("button","alt",i<LESSONS.length-1?"Next":"Finish");
+  p.onclick=function(){i>0?open(i-1):home()};n.onclick=function(){i<LESSONS.length-1?open(i+1):home()};
+  p.disabled=i===0;p.style.opacity=i===0?.5:1;row.appendChild(p);row.appendChild(n);
+  var h=el("button","alt","All lessons");h.onclick=home;h.style.marginTop="8px";h.style.width="100%";
+  app.appendChild(m);m.style.width="100%";m.style.marginBottom="8px";app.appendChild(row);app.appendChild(h);
+}
+var ready=false;function status(){var on=navigator.onLine;net.textContent=on?(ready?"Online - saved for offline":"Online"):"Offline - progress still saves";net.className="pill"+(on?"":" off")}
+if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js").catch(function(){});navigator.serviceWorker.ready.then(function(){ready=true;status()}).catch(function(){})})}
+window.addEventListener("online",function(){status();sync()});window.addEventListener("offline",status);var dip=null;window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();dip=e;var b=document.getElementById("inst");b.hidden=false;b.onclick=function(){dip.prompt();dip.userChoice.then(function(){dip=null;b.hidden=true})}});
+window.addEventListener("appinstalled",function(){document.getElementById("inst").hidden=true});
+status();home();boot();
+</script>
+</body>
+</html>
