@@ -1,80 +1,435 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0b5d3b"><title>Join Rehoteq Academy</title>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b5537">
+<title>Join Rehoteq Academy</title>
+<meta name="description" content="Start your Rehoteq Academy training. Answer three quick questions and get a personal dashboard that works offline.">
 <link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="styles.css">
+<script>try{var t=localStorage.getItem("rc-theme");if(t)document.documentElement.dataset.theme=JSON.parse(t)}catch(e){}</script>
 <style>
-:root{--bg:#f6f8f7;--card:#fff;--ink:#1b1f23;--mute:#5b6470;--green:#0b5d3b;--gold:#c8961e;--soft:#eaf3ee;--line:#d9e2dc}
-@media (prefers-color-scheme:dark){:root{--bg:#101613;--card:#18211c;--ink:#e8efe9;--mute:#9aa7a0;--green:#3cb27a;--soft:#1e2b24;--line:#2b3a32}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-.hero{background:linear-gradient(135deg,#0b5d3b,#0f7a4f);color:#fff;padding:28px 16px 34px;text-align:center}
-.hero .logo{width:48px;height:48px;border-radius:12px;background:#c8961e;color:#1b1f23;display:inline-grid;place-items:center;font-weight:800;font-size:24px}
-.hero h1{margin:10px 0 4px;font-size:24px}.hero p{margin:0;color:#d8ece1;font-size:14px}
-.wrap{max-width:520px;margin:-18px auto 24px;padding:0 16px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
-.mute{color:var(--mute);font-size:13px}.step{font-size:12px;font-weight:700;color:var(--gold);letter-spacing:.5px}
-h2{margin:2px 0 6px;font-size:18px;color:var(--green)}
-label.l{display:block;margin-top:12px;font-size:13px;color:var(--mute)}
-input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit;margin-top:4px}
-button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px 14px;cursor:pointer;background:var(--green);color:#fff;min-height:44px;width:100%;margin-top:12px}
-button.alt{background:var(--soft);color:var(--green);border:1px solid var(--line)}
-button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
-.ck{display:flex;gap:8px;align-items:flex-start;margin-top:12px}.ck input{width:auto;margin:3px 0 0}
-.err{color:#b3261e;font-size:13px;margin-top:8px;min-height:18px}
-</style></head><body>
-<div class="hero"><span class="logo">R</span><h1>Join Rehoteq Academy</h1><p>Two quick steps, then your personal dashboard.</p></div>
-<div class="wrap"><div class="card" id="root"><div class="mute">Loading...</div></div>
-<p class="mute" style="text-align:center">Rehoteq Technologies, Okitipupa, Ondo State</p></div>
+  .page{max-width:520px;margin:0 auto;padding:0 16px 40px}
+  .banner{
+    position:relative;overflow:hidden;color:#fff;background:var(--grad-ink);
+    padding:calc(28px + var(--safe-t)) 20px 72px;text-align:center;
+  }
+  .banner::before{
+    content:"";position:absolute;inset:0;
+    background:
+      radial-gradient(60% 70% at 82% 0%, rgba(226,173,52,.32), transparent 62%),
+      radial-gradient(70% 80% at 10% 100%, rgba(42,163,116,.38), transparent 66%);
+  }
+  .banner::after{
+    content:"";position:absolute;left:50%;bottom:-140px;width:420px;height:220px;transform:translateX(-50%);
+    border-radius:50%;border:1px solid rgba(255,255,255,.12);
+  }
+  .banner>*{position:relative}
+  /* Discreet teacher entrance. Visible enough to find, quiet enough to ignore. */
+  .banner>.teacher-tab{
+    position:absolute;top:calc(10px + var(--safe-t));right:12px;
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:11px;font-weight:750;letter-spacing:.09em;text-transform:uppercase;
+    color:rgba(232,246,238,.88);text-decoration:none;
+    background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
+    padding:6px 12px;border-radius:999px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    transition:background var(--t-fast),color var(--t-fast),transform var(--t-fast);
+  }
+  .banner>.teacher-tab:hover{background:rgba(255,255,255,.24);color:#fff;transform:translateY(-1px)}
+  .banner>.teacher-tab:active{transform:translateY(0)}
+  .banner .mark{
+    width:54px;height:54px;border-radius:17px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.22);
+    display:inline-grid;place-items:center;font-weight:800;font-size:24px;margin-bottom:12px;backdrop-filter:blur(6px);
+  }
+  .banner h1{font-size:clamp(24px,6.2vw,32px);color:#fff;margin-bottom:6px}
+  .banner p{color:rgba(232,246,238,.84);margin:0;font-size:15px;max-width:34ch;margin-inline:auto}
+  .lift-up{margin-top:-54px}
+  .perks{display:grid;gap:9px;margin-top:14px}
+  .perk{display:flex;gap:11px;align-items:flex-start;font-size:14px;color:var(--ink-2);line-height:1.5}
+  .perk .pi{width:26px;height:26px;border-radius:9px;flex:none;display:grid;place-items:center;font-size:13px;
+    background:var(--soft);color:var(--green);font-weight:800}
+  .steps{display:flex;gap:5px;align-items:center;margin-bottom:12px}
+  .steps span{height:5px;flex:1;border-radius:99px;background:var(--line);transition:background var(--t)}
+  .steps span.on{background:var(--grad-brand)}
+  .topline{display:flex;justify-content:flex-end;margin-bottom:2px}
+</style>
+</head>
+<body>
+
+<header class="banner">
+  <a class="teacher-tab" href="admin.html" title="Teacher console (staff only)">Teacher</a>
+  <span class="mark">R</span>
+  <h1>Start your training</h1>
+  <p id="bannersub">Three quick questions. Your dashboard is ready at the end.</p>
+</header>
+
+<div class="page lift-up">
+  <div class="card lift" id="root" tabindex="-1">
+    <div class="skel" style="width:45%;height:13px;margin-bottom:14px"></div>
+    <div class="skel" style="height:44px;margin-bottom:10px"></div>
+    <div class="skel" style="height:44px"></div>
+  </div>
+
+  <div class="card flat" style="margin-top:14px;background:transparent;border-style:dashed">
+    <div class="eyebrow">What you get</div>
+    <div class="perks">
+      <div class="perk"><span class="pi">◈</span><span><b>13 lessons and 7 timed quizzes</b> — digital foundations to Firebase, with a lab after every lesson.</span></div>
+      <div class="perk"><span class="pi">↯</span><span><b>Works offline.</b> Open it in airplane mode. Your progress uploads by itself when signal returns.</span></div>
+      <div class="perk"><span class="pi">◎</span><span><b>One account, any phone.</b> Log in elsewhere and pick up exactly where you stopped.</span></div>
+    </div>
+  </div>
+
+  <p class="faint center" style="margin-top:18px">Rehoteq Technologies · Okitipupa, Ondo State</p>
+</div>
+
+<div class="toast-host" id="toasts" role="status" aria-live="polite" aria-atomic="false"></div>
+
 <script type="module">
-const cfg={apiKey:"AIzaSyAZ12xbUzdzc_5L5JY6d3AlIvPxLKB60TA",authDomain:"rehoteq-classroom.firebaseapp.com",projectId:"rehoteq-classroom",appId:"1:773863865025:web:8b11f1cd911e9cf05b3240"};
-const B="https://www.gstatic.com/firebasejs/10.12.2/",root=document.getElementById("root");
-const $=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e};
-const put=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
-const getL=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}};
-const ERR={"auth/invalid-credential":"Wrong email or password.","auth/wrong-password":"Wrong email or password.","auth/user-not-found":"No account with that email. Use Create account.","auth/email-already-in-use":"That email already has an account. Choose Log in.","auth/weak-password":"Use at least 6 characters.","auth/invalid-email":"Check the email address.","auth/network-request-failed":"No network. Try again when you have signal.","auth/too-many-requests":"Too many tries. Wait a few minutes."};
-const nice=e=>ERR[e.code]||"Something went wrong. Try again.";
-let Au,F,auth,db;
-try{const [A,a,f]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-auth.js"),import(B+"firebase-firestore.js")]);
-  Au=a;F=f;const app=A.initializeApp(cfg);auth=Au.getAuth(app);db=F.getFirestore(app);Au.onAuthStateChanged(auth,route)}
-catch(e){root.textContent="Could not load. Connect to the internet and refresh this page."}
-function adopt(uid){const lu=getL("rc-uid");if(lu&&lu!==uid)["rc-done","rc-done-t","rc-done-d","rc-results","rc-session","rc-profile","rc-prof-d"].forEach(k=>localStorage.removeItem(k));put("rc-uid",uid)}
-function field(p,label,node){const l=$("label","l",label);l.append(node);p.append(l);return node}
-function accountView(mode){
-  root.replaceChildren();root.append($("div","step","STEP 1 OF 2"),$("h2","",mode==="signup"?"Create your account":"Log in"));
-  root.append($("div","mute","Use an email you can open. You will use it to log in on any phone."));
-  const em=Object.assign($("input"),{type:"email",placeholder:"Email",autocomplete:"email"}),pw=Object.assign($("input"),{type:"password",placeholder:"Password (6+ characters)",autocomplete:mode==="signup"?"new-password":"current-password"});
-  field(root,"Email",em);field(root,"Password",pw);
-  const err=$("div","err"),go=$("button","",mode==="signup"?"Create account":"Log in");
-  go.onclick=async()=>{err.textContent="Please wait...";try{const f=mode==="signup"?Au.createUserWithEmailAndPassword:Au.signInWithEmailAndPassword;await f(auth,em.value.trim(),pw.value)}catch(e){err.textContent=nice(e)}};
-  const sw=$("button","alt",mode==="signup"?"I already have an account":"Create a new account");sw.onclick=()=>accountView(mode==="signup"?"login":"signup");
-  root.append(err,go,sw);
-  if(mode==="login"){const rs=$("button","alt","Forgot password");rs.onclick=async()=>{try{await Au.sendPasswordResetEmail(auth,em.value.trim());err.textContent="Reset email sent. Check your inbox."}catch(e){err.textContent=nice(e)}};root.append(rs)}}
+/* =====================================================================
+   JOIN — profile first, account last.
+   The learner answers three friendly questions before being asked for a
+   password. Answers live in localStorage ("rc-draft") the whole way, so a
+   dropped network or a closed tab never loses them. The Firestore learner
+   document can only be written once an account exists, so it is saved the
+   moment sign-up succeeds.
+   ===================================================================== */
+
+const CFG = {
+  apiKey: "AIzaSyAZ12xbUzdzc_5L5JY6d3AlIvPxLKB60TA",
+  authDomain: "rehoteq-classroom.firebaseapp.com",
+  projectId: "rehoteq-classroom",
+  appId: "1:773863865025:web:8b11f1cd911e9cf05b3240"
+};
+const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
+const root = document.getElementById("root");
+
+function h(tag, props, ...kids){
+  const e = document.createElement(tag);
+  if (props) for (const k in props){
+    const v = props[k];
+    if (v === undefined || v === null || v === false) continue;
+    if (k === "class") e.className = v;
+    else if (k === "text") e.textContent = v;
+    else if (k === "style") e.style.cssText = v;
+    else if (k.startsWith("on")) e[k.toLowerCase()] = v;
+    else e.setAttribute(k, v === true ? "" : v);
+  }
+  kids.flat().forEach(k => { if (k === null || k === undefined || k === false) return;
+    e.append(k.nodeType ? k : document.createTextNode(String(k))); });
+  return e;
+}
+function toast(msg, kind){
+  const t = h("div", { class: "toast" + (kind ? " " + kind : ""), text: msg });
+  document.getElementById("toasts").append(t);
+  setTimeout(() => t.remove(), 3000);
+}
+const put  = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} };
+const getL = k => { try { return JSON.parse(localStorage.getItem(k)); } catch(e){ return null; } };
+const del  = k => { try { localStorage.removeItem(k); } catch(e){} };
+
+const ERR = {
+  "auth/invalid-credential":"Wrong email or password.",
+  "auth/wrong-password":"Wrong email or password.",
+  "auth/user-not-found":"No account with that email yet.",
+  "auth/email-already-in-use":"That email already has an account.",
+  "auth/weak-password":"Use at least 6 characters.",
+  "auth/invalid-email":"Check the email address.",
+  "auth/network-request-failed":"No network. Try again when you have signal.",
+  "auth/too-many-requests":"Too many tries. Wait a few minutes."
+};
+const nice = e => ERR[e.code] || "Something went wrong. Try again.";
+
+/* ---------- wizard definition ---------- */
+const STEPS = [
+  { title: "Who are you?", note: "So your teacher knows who is in the room.",
+    fields: [["name","Full name","text","Your full name"],
+             ["phone","Phone or WhatsApp number","tel","e.g. 08012345678","Used for class reminders only."]] },
+  { title: "How will you learn?", note: "This shapes your timetable and reminders.",
+    fields: [["track","Track","select",["Beginner","Masterclass"]],
+             ["mode","How will you attend?","select",["In person (Okitipupa)","Online (Zoom or Google Meet)","Both"]],
+             ["device","Device you will learn on","select",["Phone","Laptop","Both"]]] },
+  { title: "Where are you going?", note: "We use this to suggest the right projects for you.",
+    fields: [["level","Your experience","select",["Complete beginner","Some experience","I already build projects"]],
+             ["goal","Main goal","select",["Get skills for a job","Freelance and earn","School or church project","Start my own business","Just learning"]]] }
+];
+const PROFILE_KEYS = ["name","phone","track","mode","device","level","goal"];
+
+let Au, F, auth, db;
+let draft = getL("rc-draft") || {};
+let step = 0;
+let authed = null;      // signed-in user, when they already have an account
+let busy = false;       // guards onAuthStateChanged while we finish sign-up
+let mode = "wizard";    // "wizard" | "login"
+
+const preset = new URLSearchParams(location.search).get("track");
+if (!draft.track && (preset === "Beginner" || preset === "Masterclass")) draft.track = preset;
+
+const totalScreens = () => authed ? STEPS.length : STEPS.length + 1;
+const saveDraft = () => put("rc-draft", draft);
+
+/* ---------- boot ---------- */
+try {
+  const [A, a, f] = await Promise.all([
+    import(SDK + "firebase-app.js"), import(SDK + "firebase-auth.js"), import(SDK + "firebase-firestore.js")
+  ]);
+  Au = a; F = f;
+  const app = A.initializeApp(CFG);
+  auth = Au.getAuth(app); db = F.getFirestore(app);
+  Au.onAuthStateChanged(auth, route);
+} catch (e) {
+  // Offline on arrival: let them answer anyway, we ask for the account at the end.
+  render();
+  toast("You are offline — you can still answer, we will connect at the end");
+}
+
+function adopt(uid){
+  const prev = getL("rc-uid");
+  if (prev && prev !== uid)
+    ["rc-done","rc-done-t","rc-done-d","rc-results","rc-session","rc-profile","rc-prof-d","rc-lab","rc-out","rc-draft"]
+      .forEach(k => localStorage.removeItem(k));
+  put("rc-uid", uid);
+}
+
 async function route(u){
-  if(!u){accountView("signup");return}
-  adopt(u.uid);const lp=getL("rc-profile");
-  if(lp&&lp.uid===u.uid){location.replace("./");return}
-  root.textContent="Checking your account...";
-  try{const s=await F.getDoc(F.doc(db,"learners",u.uid));if(s.exists()){put("rc-profile",s.data());put("rc-prof-d",false);location.replace("./");return}}catch(e){}
-  formView(u)}
-function formView(u){
-  root.replaceChildren();root.append($("div","step","STEP 2 OF 2"),$("h2","","Tell us about you"),$("div","mute","One minute. This sets up your dashboard."));
-  const sel=a=>{const s=$("select");s.append(new Option("Choose...",""));a.forEach(x=>s.append(new Option(x,x)));return s};
-  const inp=(t,p,ac)=>Object.assign($("input"),{type:t,placeholder:p,autocomplete:ac||"off"});
-  const f={name:field(root,"Full name",inp("text","Your full name","name")),phone:field(root,"Phone or WhatsApp number",inp("tel","e.g. 08012345678","tel")),
-    track:field(root,"Track",sel(["Beginner","Masterclass"])),mode:field(root,"How will you attend?",sel(["In person (Okitipupa)","Online (Zoom or Google Meet)","Both"])),
-    device:field(root,"Device you will learn on",sel(["Phone","Laptop","Both"])),level:field(root,"Your experience",sel(["Complete beginner","Some experience","I already build projects"])),
-    goal:field(root,"Main goal",sel(["Get skills for a job","Freelance and earn","School or church project","Start my own business","Just learning"]))};
-  const t=new URLSearchParams(location.search).get("track");if(t==="Beginner"||t==="Masterclass")f.track.value=t;
-  const ck=Object.assign($("input"),{type:"checkbox"}),cl=$("label","ck");cl.append(ck,$("span","mute","I agree that Rehoteq Academy stores my name, phone and progress to run my training."));root.append(cl);
-  const err=$("div","err"),go=$("button","","Go to my dashboard");root.append(err,go);
-  go.onclick=async()=>{
-    const v={};for(const k in f)v[k]=f[k].value.trim();v.name=v.name.slice(0,80);const ph=v.phone.replace(/[\s-]/g,"");
-    if(v.name.length<2){err.textContent="Enter your full name.";return}
-    if(!/^\+?\d{10,15}$/.test(ph)){err.textContent="Enter a valid phone number.";return}
-    for(const k in v)if(!v[k]){err.textContent="Please complete every field.";return}
-    if(!ck.checked){err.textContent="Please tick the agreement box.";return}
-    v.phone=ph;v.uid=u.uid;v.createdAt=Date.now();go.disabled=true;err.textContent="Setting up your dashboard...";
-    put("rc-profile",v);put("rc-prof-d",true);
-    try{await Promise.race([F.setDoc(F.doc(db,"learners",u.uid),v),new Promise((_,r)=>setTimeout(()=>r(new Error("slow")),10000))]);put("rc-prof-d",false)}
-    catch(e){err.textContent="Saved on this phone. It will upload when you have signal."}
-    setTimeout(()=>location.replace("./"),err.textContent.startsWith("Saved")?1500:0)}}
-</script></body></html>
+  if (busy) return;                       // we are mid sign-up; do not hijack the screen
+  if (!u){ authed = null; render(); return; }
+
+  authed = u; adopt(u.uid);
+  const local = getL("rc-profile");
+  if (local && local.uid === u.uid){ del("rc-draft"); location.replace("./"); return; }
+
+  loadingCard("Checking your account...");
+  try {
+    const snap = await F.getDoc(F.doc(db, "learners", u.uid));
+    if (snap.exists()){
+      put("rc-profile", snap.data()); put("rc-prof-d", false); del("rc-draft");
+      location.replace("./"); return;
+    }
+  } catch (e) { /* offline or unreadable: fall through and let them fill the form */ }
+  // Signed in but no profile yet: run the same wizard, minus the account step.
+  if (step > STEPS.length - 1) step = STEPS.length - 1;
+  render();
+}
+
+function loadingCard(msg){
+  root.replaceChildren(
+    h("div", { class: "row", style: "flex-wrap:nowrap" },
+      h("div", { class: "skel", style: "width:38px;height:38px;border-radius:50%" }),
+      h("div", { style: "flex:1" },
+        h("div", { class: "skel", style: "width:60%;margin-bottom:7px" }),
+        h("div", { class: "skel", style: "width:40%" }))),
+    h("p", { class: "mute", style: "margin-top:14px", text: msg }));
+}
+
+function progress(){
+  const bar = h("div", { class: "steps" });
+  for (let i = 0; i < totalScreens(); i++) bar.append(h("span", { class: i <= step ? "on" : "" }));
+  return bar;
+}
+
+/* A returning learner must always be one tap from logging in. */
+function loginLink(){
+  return h("div", { class: "topline" },
+    h("button", { class: "btn quiet sm", onclick: () => { mode = "login"; render(); } }, "I already have an account"));
+}
+
+function render(){
+  if (mode === "login"){ loginView(); return; }
+  if (step < STEPS.length) profileStep();
+  else accountStep();
+}
+
+/* =====================================================================
+   Profile steps 1-3
+   ===================================================================== */
+function profileStep(){
+  const spec = STEPS[step];
+  // Already signed in (e.g. logged in, or created the account on a previous visit):
+  // there is no account step, so the last profile step is where we finish.
+  const finishesHere = authed && step === STEPS.length - 1;
+  root.replaceChildren();
+  const nodes = {};
+  const err = h("div", { class: "err" });
+
+  const body = spec.fields.map(f => {
+    const [key, label, type, opt, hint] = f;
+    let node;
+    if (type === "select"){
+      node = h("select");
+      node.append(new Option("Choose...", ""));
+      opt.forEach(o => node.append(new Option(o, o)));
+    } else {
+      node = h("input", { type, placeholder: opt, autocomplete: key === "name" ? "name" : key === "phone" ? "tel" : "off" });
+    }
+    if (draft[key]) node.value = draft[key];
+    nodes[key] = node;
+    return h("label", { class: "field" }, h("span", { class: "lbl", text: label }), node,
+      hint ? h("span", { class: "hint", text: hint }) : null);
+  });
+
+  const collect = () => { for (const k in nodes) draft[k] = String(nodes[k].value || "").trim(); saveDraft(); };
+
+  // Consent lives on whichever screen is last, so it is never skipped.
+  let consent = null;
+  if (finishesHere){
+    consent = h("input", { type: "checkbox" });
+    if (draft.consent) consent.checked = true;
+  }
+
+  const next = h("button", { class: "btn block lg", style: "margin-top:4px" },
+    finishesHere ? "Open my dashboard" : "Continue →");
+  next.onclick = async () => {
+    collect();
+    if (step === 0){
+      if ((draft.name || "").length < 2){ err.textContent = "Enter your full name."; nodes.name.focus(); return; }
+      draft.name = draft.name.slice(0, 80);
+      const phone = (draft.phone || "").replace(/[\s-]/g, "");
+      if (!/^\+?\d{10,15}$/.test(phone)){ err.textContent = "Enter a valid phone number, e.g. 08012345678."; nodes.phone.focus(); return; }
+      draft.phone = phone; saveDraft();
+    } else {
+      for (const f of spec.fields) if (!draft[f[0]]){ err.textContent = "Please answer every question on this step."; return; }
+    }
+    if (finishesHere){
+      draft.consent = consent.checked; saveDraft();
+      if (!consent.checked){ err.textContent = "Please tick the agreement box to continue."; return; }
+      next.disabled = true; next.textContent = "Setting up your dashboard...";
+      busy = true;
+      await saveProfile();
+      return;
+    }
+    step++; render(); window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  root.append(
+    loginLink(), progress(),
+    h("div", { class: "eyebrow", text: "Step " + (step + 1) + " of " + totalScreens() }),
+    h("h2", { style: "font-size:21px;margin:2px 0 4px", text: spec.title }),
+    h("p", { class: "mute", text: spec.note }),
+    ...body,
+    consent ? h("label", { class: "check" }, consent,
+      h("span", { text: "I agree that Rehoteq Academy stores my name, phone and progress to run my training." })) : null,
+    err, next,
+    step > 0 ? h("button", { class: "btn quiet block", style: "margin-top:6px",
+      onclick: () => { collect(); step--; render(); } }, "← Back") : null
+  );
+}
+
+/* =====================================================================
+   Final step — create the account (or save, if already signed in)
+   ===================================================================== */
+function accountStep(){
+  root.replaceChildren();
+  const email = h("input", { type: "email", placeholder: "you@example.com", autocomplete: "email", inputmode: "email" });
+  const pass  = h("input", { type: "password", placeholder: "At least 6 characters", autocomplete: "new-password" });
+  if (draft.email) email.value = draft.email;
+  const consent = h("input", { type: "checkbox" });
+  if (draft.consent) consent.checked = true;
+  const err = h("div", { class: "err" });
+  const go = h("button", { class: "btn block lg", style: "margin-top:4px" }, "Create account & open dashboard");
+
+  go.onclick = async () => {
+    draft.email = email.value.trim(); draft.consent = consent.checked; saveDraft();
+    err.textContent = "";
+    if (!draft.email){ err.textContent = "Enter your email."; email.focus(); return; }
+    if (pass.value.length < 6){ err.textContent = "Your password needs at least 6 characters."; pass.focus(); return; }
+    if (!consent.checked){ err.textContent = "Please tick the agreement box to continue."; return; }
+    if (!Au){ err.textContent = "You need internet for this last step. Your answers are saved."; return; }
+
+    busy = true; go.disabled = true; go.textContent = "Creating your account...";
+    try {
+      const cred = await Au.createUserWithEmailAndPassword(auth, draft.email, pass.value);
+      authed = cred.user;
+      await saveProfile();
+    } catch (e) {
+      busy = false; go.disabled = false; go.textContent = "Create account & open dashboard";
+      if (e.code === "auth/email-already-in-use"){
+        err.replaceChildren("That email already has an account. ");
+        err.append(h("button", { class: "btn quiet sm", onclick: () => { mode = "login"; render(); } }, "Log in instead"));
+        return;
+      }
+      err.textContent = nice(e);
+    }
+  };
+
+  root.append(
+    loginLink(), progress(),
+    h("div", { class: "eyebrow", text: "Last step · Save your place" }),
+    h("h2", { style: "font-size:21px;margin:2px 0 4px", text: "Create your account" }),
+    h("p", { class: "mute", text: "This is how you log back in on any phone and keep your progress." }),
+    h("div", { class: "callout ok", style: "margin-top:12px" }, h("div", null,
+      h("b", { text: "Your answers are saved. " }),
+      (draft.name ? draft.name.split(" ")[0] + ", y" : "Y") + "ou are one step from your dashboard.")),
+    h("label", { class: "field" }, h("span", { class: "lbl", text: "Email" }), email),
+    h("label", { class: "field" }, h("span", { class: "lbl", text: "Password" }), pass),
+    h("label", { class: "check" }, consent,
+      h("span", { text: "I agree that Rehoteq Academy stores my name, phone and progress to run my training." })),
+    err, go,
+    h("button", { class: "btn quiet block", style: "margin-top:6px",
+      onclick: () => { step--; render(); } }, "← Back")
+  );
+}
+
+/* Shared by the account step and the already-signed-in path. */
+async function saveProfile(){
+  adopt(authed.uid);
+  const v = { uid: authed.uid, createdAt: Date.now() };
+  PROFILE_KEYS.forEach(k => v[k] = draft[k]);     // exactly the keys the Firestore rules allow
+  put("rc-profile", v); put("rc-prof-d", true);
+  let offline = false;
+  try {
+    await Promise.race([
+      F.setDoc(F.doc(db, "learners", authed.uid), v),
+      new Promise((_, r) => setTimeout(() => r(new Error("slow")), 10000))
+    ]);
+    put("rc-prof-d", false);
+  } catch (e) {
+    offline = true;
+    toast("Saved on this phone — it uploads when you have signal");
+  }
+  del("rc-draft");
+  setTimeout(() => location.replace("./"), offline ? 1400 : 0);
+}
+
+/* =====================================================================
+   Returning learner — log in
+   ===================================================================== */
+function loginView(){
+  root.replaceChildren();
+  const email = h("input", { type: "email", placeholder: "you@example.com", autocomplete: "email", inputmode: "email" });
+  const pass  = h("input", { type: "password", placeholder: "Your password", autocomplete: "current-password" });
+  if (draft.email) email.value = draft.email;
+  const err = h("div", { class: "err" });
+  const go = h("button", { class: "btn block lg" }, "Log in");
+
+  const submit = async () => {
+    err.textContent = "";
+    if (!email.value.trim() || !pass.value){ err.textContent = "Enter your email and password."; return; }
+    if (!Au){ err.textContent = "You need internet to log in."; return; }
+    go.disabled = true; go.textContent = "Please wait...";
+    try { await Au.signInWithEmailAndPassword(auth, email.value.trim(), pass.value); }
+    catch (e){ err.textContent = nice(e); go.disabled = false; go.textContent = "Log in"; }
+  };
+  go.onclick = submit;
+  [email, pass].forEach(i => i.onkeydown = ev => { if (ev.key === "Enter") submit(); });
+
+  root.append(
+    h("div", { class: "eyebrow", text: "Returning learner" }),
+    h("h2", { style: "font-size:21px;margin:2px 0 4px", text: "Welcome back" }),
+    h("p", { class: "mute", text: "Log in and your lessons, labs and quiz scores come straight back." }),
+    h("label", { class: "field" }, h("span", { class: "lbl", text: "Email" }), email),
+    h("label", { class: "field" }, h("span", { class: "lbl", text: "Password" }), pass),
+    err, go,
+    h("button", { class: "btn quiet block", style: "margin-top:8px", onclick: async () => {
+      if (!Au){ err.textContent = "You need internet for this."; return; }
+      try { await Au.sendPasswordResetEmail(auth, email.value.trim()); err.textContent = "Reset email sent. Check your inbox."; }
+      catch (e){ err.textContent = nice(e); }
+    } }, "Forgot password"),
+    h("button", { class: "btn quiet block", onclick: () => { mode = "wizard"; render(); } },
+      draft.name ? "← Back to my answers" : "← I am new here")
+  );
+}
+</script>
+</body>
+</html>

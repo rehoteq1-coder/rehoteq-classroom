@@ -1,0 +1,76 @@
+REHOTEQ CLASSROOM — MASTERCLASS BACKLOG
+=======================================
+This file is NOT loaded by the app. Nothing here is downloaded to a learner's
+phone. It is drafted content waiting to be switched on.
+
+The Masterclass currently ships M1 and M2 (6 lessons, 2 quizzes, ids 100-105).
+Everything below is written and ready. Ids 106-113 are RESERVED for it, in the
+order shown, so adding it later cannot disturb anyone's saved progress.
+
+HOW TO SWITCH A MODULE ON
+-------------------------
+1. index.html — paste the module's lesson lines at the END of var M_LESSONS=[...].
+   Append only. Never insert above an existing lesson: saved progress is stored
+   as a position in this list, so inserting shifts everyone onto the wrong lesson.
+2. index.html — paste the matching quiz into var M_QZ={...}, before the closing };
+   Remember the comma after the previous quiz.
+3. admin.html — raise TRACKS.Masterclass.total to the new lesson count.
+4. sw.js — bump the cache version, then re-upload.
+
+Add whole modules at a time. A module whose quiz is missing still works, but
+learners see lessons they cannot be tested on.
+
+WHEN TO MOVE TO A JSON FILE INSTEAD
+-----------------------------------
+If the Masterclass grows past roughly 10 lessons, index.html starts carrying
+more text than a first paint needs. At that point move BOTH tracks into
+content.json, fetch it once, and let the service worker cache it. The track
+structure in index.html already supports that: only the two lessons/quizzes
+arrays would move. Do not do this earlier; one file is cheaper than two
+round-trips on a weak network.
+
+
+=== LESSONS · ids 106-113 · paste into M_LESSONS in this order ===
+
+{m:"M3 APIs and the back end",t:"HTTP and REST in practice",pts:["GET reads, POST creates, PUT and PATCH update, DELETE removes. Keep each method honest.","Status codes carry meaning: 200 fine, 201 created, 400 bad request, 401 not signed in, 403 not allowed, 404 missing, 500 server fault.","A CORS error comes from the server, not your code. The server must send the Access-Control-Allow-Origin header."],lab:["Call a public API with GET and with POST and read the status codes.","Cause a 404 and a 400 on purpose and handle both gracefully.","Reproduce a CORS error and write down exactly what the server would need to send."]},
+{m:"M3 APIs and the back end",t:"Serverless functions and secrets",pts:["Anything in front-end code is public. Keys that cost money or grant admin rights belong on a server.","A cloud function is a small piece of server code that runs on demand and costs nothing while nobody calls it.","Keep secrets in environment variables, never in the repository, and rotate any key that has leaked."],lab:["Write a cloud function that calls a paid API and returns only the result.","Move one key out of your front end into that function.","Add a .env file and confirm .gitignore excludes it."]},
+{m:"M4 Data that scales",t:"Modelling data for NoSQL",pts:["Design around the screens you will build, not around tidy tables. Store data the way you will read it.","Copying a learner name into a result document is normal in NoSQL. It saves a lookup on every single read.","Every query needs an index. Compound queries need a compound index, and Firestore tells you which one to create."],lab:["Sketch the documents needed for a results screen that shows the learner name.","Write a query that requires a compound index and create it.","Count the reads used by one dashboard load."]},
+{m:"M4 Data that scales",t:"Security rules in depth",pts:["Rules are not filters. A query that could return a document the user may not read is rejected outright.","Validate shape as well as access: check the keys, types and sizes of request.resource.data on every write.","Test rules in the emulator before publishing. Write a test that is supposed to fail and make sure it does."],lab:["Write rules so a learner can read only their own results.","Add validation that rejects a score higher than the total.","Run the emulator and prove an attacker cannot write someone else's document."]},
+{m:"M5 Ship it",t:"Git for teams",pts:["One branch per piece of work, opened as a pull request. Main stays deployable at all times.","A conflict is two edits to the same lines. Open the file, keep the right code, remove the markers, then commit.","Write commit messages that explain why. The diff already shows what changed."],lab:["Create a branch, make a change and open a pull request.","Cause a merge conflict on purpose and resolve it.","Review someone else's pull request and leave one useful comment."]},
+{m:"M5 Ship it",t:"Deploy and automate",pts:["Continuous integration runs your checks on every push, so broken code never reaches main.","A GitHub Actions workflow is a YAML file listing the jobs and steps that run on a trigger.","Always know how to roll back. A deploy you cannot undo is a deploy you should not make."],lab:["Add an Action that runs on every push and fails when there is an error.","Deploy automatically whenever main changes.","Roll a deployment back and time how long it takes."]},
+{m:"M6 Performance and quality",t:"Fast on a 3G phone",pts:["Measure before you optimise. Lighthouse and the Network tab show you where the time actually goes.","The biggest wins are usually images, then unused JavaScript, then blocking fonts.","Cache deliberately with a service worker, and change the cache version or phones keep serving the old files."],lab:["Run Lighthouse on your project and write down the three worst items.","Shrink the largest image and the largest script, then measure again.","Test the whole flow on throttled Slow 3G."]},
+{m:"M7 Earning from your skills",t:"Freelancing and client work",pts:["Agree the scope in writing before you start: what is included, what is not, and what a change costs.","Price the outcome rather than the hours, and take a deposit before the first line of code.","Hand over properly: the repository, the accounts, a short written guide, and a clear end to your responsibility."],lab:["Write a one page proposal for a real local business.","Build a portfolio page with three projects and the problem each one solved.","Draft your rate card and a simple contract you would actually send."]}
+
+
+=== QUIZZES · paste into M_QZ ===
+
+M3:{name:"M3 APIs and the back end",secs:300,q:[
+{t:"Which status code means not signed in?",o:["401","403","404"],a:0,e:"401 is unauthenticated. 403 means signed in but not allowed."},
+{t:"Which method creates a new resource?",o:["POST","GET"],a:0,e:"GET should never change anything on the server."},
+{t:"A CORS error is fixed by:",o:["The server sending the right header","Changing your fetch options"],a:0,e:"Only the server can allow your origin."},
+{t:"Where should a paid API key live?",o:["On a server or in a cloud function","In your front-end code"],a:0,e:"Anything shipped to the browser can be read by anyone."},
+{t:"Scales to zero means:",o:["It costs nothing while nobody calls it","It never runs"],a:0,e:"You pay only for actual use."}]},
+M4:{name:"M4 Data that scales",secs:300,q:[
+{t:"In NoSQL you model data around:",o:["The screens you will build","Perfectly normalised tables"],a:0,e:"Store it the way you read it."},
+{t:"Copying a name into another document is:",o:["Normal and often correct","Always a mistake"],a:0,e:"Duplication saves a read on every load."},
+{t:"Firestore security rules are:",o:["Not filters, so unsafe queries are rejected","Filters that quietly hide documents"],a:0,e:"If a query could return something forbidden, the whole query fails."},
+{t:"A write rule should also check:",o:["The keys, types and sizes of the data","Only who is signed in"],a:0,e:"Validation stops a signed-in user writing nonsense."},
+{t:"Before publishing rules you should:",o:["Test them in the emulator","Publish and watch what happens"],a:0,e:"Write a test that is meant to fail and confirm it does."}]},
+M5:{name:"M5 Ship it",secs:300,q:[
+{t:"Main should always be:",o:["Deployable","A place to experiment"],a:0,e:"Experiments belong on a branch."},
+{t:"A merge conflict means:",o:["Two edits touched the same lines","Git is broken"],a:0,e:"You decide which code is correct."},
+{t:"Continuous integration runs your checks:",o:["On every push","Once a month"],a:0,e:"That is how broken code is caught before main."},
+{t:"A good commit message explains:",o:["Why the change was made","Which lines changed"],a:0,e:"The diff already shows what changed."},
+{t:"Before any deploy you should know:",o:["How to roll it back","The server IP address"],a:0,e:"A deploy you cannot undo is a deploy you should not make."}]},
+M6:{name:"M6 Performance and quality",secs:300,q:[
+{t:"The first step in making a page faster is:",o:["Measure it","Remove the framework"],a:0,e:"Optimising without measuring usually wastes the effort."},
+{t:"The heaviest part of a typical page is:",o:["Images","CSS"],a:0,e:"Compress and resize them first."},
+{t:"If you change a file that a service worker caches you must also:",o:["Change the cache version","Ask every user to clear their browser"],a:0,e:"Otherwise phones keep serving the old copy."},
+{t:"Lighthouse is used to:",o:["Audit performance and accessibility","Host your website"],a:0,e:"It reports and suggests fixes."},
+{t:"You should test your site on:",o:["Throttled Slow 3G","Only fast office wifi"],a:0,e:"Your learners are not on office wifi."}]},
+M7:{name:"M7 Earning from your skills",secs:300,q:[
+{t:"Scope should be agreed:",o:["In writing before you start","Verbally as you go along"],a:0,e:"Written scope is what protects both sides."},
+{t:"A deposit should be taken:",o:["Before the work starts","After handover"],a:0,e:"It confirms the client is serious."},
+{t:"Pricing the outcome rather than the hours means:",o:["You charge for the result you deliver","You work unlimited hours"],a:0,e:"Getting faster should not cut your pay."},
+{t:"Handover should include:",o:["Repository, accounts and a written guide","Only the live link"],a:0,e:"The client must be able to continue without you."},
+{t:"A change request should:",o:["Have a stated cost and timeline","Be absorbed for free"],a:0,e:"Unpriced changes are how projects die."}]}

@@ -1,6 +1,7 @@
 // Change the version below every time you update index.html or other files.
-const CACHE = 'rehoteq-classroom-v7';
-const SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
+const CACHE = 'rehoteq-classroom-v14';
+const SHELL = ['./', './index.html', './join.html', './admin.html', './styles.css',
+               './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)));
