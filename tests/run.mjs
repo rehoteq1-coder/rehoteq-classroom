@@ -276,6 +276,16 @@ if (SUITE === "repo") {
     ok("service worker caches " + f, sw.includes(f)));
   ok("tests are not shipped to the service worker", !sw.includes("tests/"));
 
+  /* firestore.rules is what the teacher pastes into Firebase. It must never
+     drift from the copy printed in README.txt. */
+  const fr = fs.readFileSync(ROOT + "firestore.rules", "utf8").trim();
+  const inReadme = rme.slice(rme.indexOf("rules_version"), rme.indexOf("HOW TEACHERS REACH")).trim();
+  ok("firestore.rules matches the block in README", fr === inReadme);
+  ok("the rules close every brace", (fr.match(/{/g) || []).length === (fr.match(/}/g) || []).length);
+  ["users","learners","results","config","materials","assignments","submissions","marks"]
+    .forEach(c => ok("firestore.rules covers " + c, fr.includes("match /" + c + "/")));
+  ok("the rules are not cached by the service worker", !sw.includes("firestore.rules"));
+
   const v = +/rehoteq-classroom-v(\d+)/.exec(sw)[1];
   ok("README tells the teacher the next version number", rme.includes("change v" + v + " to v" + (v + 1)));
 }

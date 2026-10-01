@@ -27,9 +27,16 @@ for (const [label, file, env] of SUITES) {
   if (!m || f || r.status !== 0) {
     broken.push(label);
     out.filter(l => /FAIL|Error/.test(l)).forEach(l => console.log("  " + label + ": " + l.trim()));
-    if (!m) console.log("  " + label + ": suite did not finish\n" + out.slice(-12).join("\n"));
+    if (!m) {
+      const missing = /Cannot find package '([^']+)'/.exec(out.join("\n"));
+      console.log(missing
+        ? "  " + label + ": needs the '" + missing[1] + "' package. Run:  cd tests && npm install"
+        : "  " + label + ": suite did not finish\n" + out.slice(-12).join("\n"));
+    }
   }
-  console.log((f ? "✗" : "✓") + " " + label.padEnd(30) + p + " passed" + (f ? ", " + f + " FAILED" : ""));
+  const brokeHere = !m || f || r.status !== 0;
+  console.log((brokeHere ? "✗" : "✓") + " " + label.padEnd(30)
+    + (m ? p + " passed" + (f ? ", " + f + " FAILED" : "") : "DID NOT RUN"));
 }
 
 console.log("\n" + (failed || broken.length ? "SOMETHING IS BROKEN" : "ALL GOOD")

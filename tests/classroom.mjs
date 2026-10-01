@@ -255,7 +255,8 @@ console.log("\n--- Firestore rules in README ---");
   ok("a score is NOT writable through the hand-in", !subBlock.includes("request.resource.data.score"));
 
   const markBlock = rules.slice(rules.indexOf("match /marks"));
-  ok("only an admin can write a mark", /allow write: if isAdmin\(\)/.test(markBlock));
+  ok("only an admin can write a mark", /allow create, update: if isAdmin\(\)/.test(markBlock));
+  ok("a mark cannot be written by a learner", !/allow write: if request\.auth/.test(markBlock));
   ok("a learner can read their own mark", markBlock.includes("resource.data.uid == request.auth.uid"));
   ok("a mark cannot exceed the total", markBlock.includes("score <= request.resource.data.points"));
   ok("marks cannot be deleted", markBlock.includes("allow delete: if false"));

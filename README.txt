@@ -54,6 +54,8 @@ admin.html: class settings (next class text, Zoom/Meet link, announcement), lear
 quiz results with filter, CSV export of results and learners, study materials, and assignments with marking.
 
 STEP 1: REPLACE FIRESTORE RULES (Firebase console > Firestore Database > Rules > Publish)
+The same block is in the file firestore.rules, which is easier to copy from.
+Replace EVERYTHING in the rules editor with it - do not append it to the old rules.
 
 rules_version = '2';
 service cloud.firestore {
@@ -131,7 +133,7 @@ service cloud.firestore {
     match /marks/{id} {
       allow read: if request.auth != null
                   && (resource.data.uid == request.auth.uid || isAdmin());
-      allow write: if isAdmin()
+      allow create, update: if isAdmin()
         && request.resource.data.score is number
         && request.resource.data.points is number
         && request.resource.data.score >= 0
