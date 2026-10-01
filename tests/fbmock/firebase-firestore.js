@@ -68,4 +68,13 @@ export function setDoc(d,data){
   WRITES.push({col:d.__c,id:d.__id,data});
   return Promise.resolve();
 }
+export function deleteDoc(d){
+  if(denies(d.__c))return denied(d.__c);
+  WRITES.push({col:d.__c,id:d.__id,op:"delete"});
+  if(BOOK[d.__c]){
+    const idx=BOOK[d.__c].findIndex(x=>(x.id||x.uid)===d.__id);
+    if(idx>=0)BOOK[d.__c].splice(idx,1);
+  }
+  return Promise.resolve();
+}
 export function serverTimestamp(){return Date.now()}

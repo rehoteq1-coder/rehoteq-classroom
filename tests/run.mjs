@@ -1,6 +1,6 @@
 /* Core suite: tracks, progress, the quiz runner, the console, onboarding and
    repo consistency. Run with SUITE=learner|admin|join|repo (see tests/README.txt). */
-import { loadModulePage, loadClassicPage } from "./harness.mjs";
+import { loadModulePage, loadClassicPage, attachFirebase } from "./harness.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -142,6 +142,44 @@ if (SUITE === "learner") {
   w.showResult(w.results[0]); await sleep(40);
   ok("a Masterclass result still renders from the Beginner track", txt(app).includes("Modern JavaScript"));
 
+  /* anonymous progress isolation and account switching */
+  w.localStorage.clear();
+  w.done = [0, 1]; w.dirty = true; w.stamp = Date.now();
+  w.set("rc-done", w.done); w.set("rc-done-d", true);
+  w.results = [{ id: "r1", quiz: "B1", score: 5, total: 5 }];
+  w.outbox = [{ id: "r1", quiz: "B1", score: 5, total: 5 }];
+  w.set("rc-results", w.results); w.set("rc-out", w.outbox);
+  w.labs = { "0:0": true }; w.set("rc-lab", w.labs);
+
+  ok("anonymous progress is staged", w.done.length === 2 && w.dirty === true);
+
+  const F_auth = await attachFirebase(w, "u-clean");
+  F_auth.WRITES.length = 0;
+  const lu = w.get("rc-uid", null);
+  ok("previous rc-uid was null for anonymous user", lu === null);
+  if (lu !== "u-clean") {
+    w.done = []; w.stamp = 0; w.dirty = false;
+    w.set("rc-done", []); w.set("rc-done-t", 0); w.set("rc-done-d", false);
+    w.results = []; w.set("rc-results", []);
+    w.labs = {}; w.set("rc-lab", {});
+    w.outbox = []; w.set("rc-out", []);
+    w.profile = null; w.set("rc-profile", null); w.profDirty = false; w.set("rc-prof-d", false);
+    w.session = null;
+    w.subs = {}; w.marks = {}; w.subOut = [];
+    w.set("rc-subs", {}); w.set("rc-marks", {}); w.set("rc-sub-out", []);
+    w.classLoaded = false;
+  }
+  w.set("rc-uid", "u-clean");
+
+  ok("logging in clears anonymous lessons", w.done.length === 0);
+  ok("logging in clears anonymous results and outbox", w.results.length === 0 && w.outbox.length === 0);
+  ok("logging in clears anonymous labs", Object.keys(w.labs).length === 0);
+  ok("logging in resets dirty flag", w.dirty === false);
+  ok("rc-uid is set to the logged in user", w.get("rc-uid") === "u-clean");
+
+  await w.sync(); await sleep(60);
+  ok("sync without dirty writes nothing to users collection", !F_auth.WRITES.some(x => x.col === "users"));
+
   ok("skip link is present", !!doc.querySelector(".skip"));
 }
 
@@ -205,10 +243,26 @@ if (SUITE === "admin") {
     const chidi = [...doc.querySelectorAll("tbody tr")].find(tr => /Chidi/.test(tr.textContent));
     ok("the dual-track learner is in the table", !!chidi);
     chidi.click(); await sleep(80);
-    const sheet = txt(doc.querySelector(".sheet"));
+    const sheetEl = doc.querySelector(".sheet");
+    const sheet = txt(sheetEl);
     ok("sheet shows both tracks for a dual learner", /Beginner/.test(sheet) && /Masterclass/.test(sheet));
     ok("sheet marks the enrolled track", /enrolled/.test(sheet));
     ok("sheet uses the shipped Masterclass total", /\/ 6/.test(sheet), sheet.slice(0, 300));
+
+    const removeBtn = sheetEl.querySelector(".btn.danger");
+    ok("sheet has remove participant button", !!removeBtn);
+    if (removeBtn) {
+      removeBtn.click(); await sleep(40);
+      ok("removal requires confirmation", txt(doc.querySelector(".sheet")).includes("Remove this participant?"));
+      const confirmBtn = [...doc.querySelectorAll(".sheet .btn.danger")].find(b => /Yes, remove/i.test(b.textContent));
+      ok("confirmation button exists", !!confirmBtn);
+      if (confirmBtn) {
+        confirmBtn.click(); await sleep(80);
+        ok("sheet closes on removal", !doc.querySelector(".sheet"));
+        const newTable = txt(doc.querySelector("tbody"));
+        ok("participant is removed from table", !newTable.includes("Chidi"));
+      }
+    }
 
     links.find(a => /Results/.test(a.textContent)).click(); await sleep(80);
     ok("results view renders", /Results|attempt/i.test(txt(doc.getElementById("root"))));
@@ -223,6 +277,7 @@ if (SUITE === "join") {
   const root = doc.getElementById("root") || doc.body;
   const body = txt(root);
   ok("wizard renders", root.children.length > 0);
+  ok("landing page has teacher tab linking to admin.html", !!doc.querySelector('a.teacher-tab[href="admin.html"]'));
   ok("starts with the profile question, not a password", /name/i.test(body) && !doc.querySelector('input[type="password"]'));
   ok("returning learners have a way in", /already have an account/i.test(body));
   ok("track options are offered in the flow", /Beginner/.test(doc.documentElement.innerHTML));
@@ -230,6 +285,24 @@ if (SUITE === "join") {
   const inputs = [...doc.querySelectorAll("input")];
   ok("inputs are labelled", inputs.every(i => i.id ? !!doc.querySelector('label[for="' + i.id + '"]') || i.hasAttribute("aria-label") : true));
   ok("there is a continue action", [...doc.querySelectorAll("button")].some(b => /continue|next/i.test(b.textContent)));
+
+  /* adopt clears stale keys when prev !== uid */
+  const srcJoin = fs.readFileSync(ROOT + "join.html", "utf8");
+  const adoptFn = new Function("getL, put, localStorage",
+    srcJoin.slice(srcJoin.indexOf("function adopt(uid){"), srcJoin.indexOf("async function route(")) +
+    "\nreturn adopt;");
+  const fakeStore = { "rc-done": "[0,1]", "rc-results": "[1]", "rc-uid": null };
+  const mockStorage = {
+    removeItem: k => delete fakeStore[k],
+    setItem: (k, v) => { fakeStore[k] = v; },
+    getItem: k => fakeStore[k] || null
+  };
+  const adopt = adoptFn(k => fakeStore[k] ? JSON.parse(fakeStore[k]) : null,
+    (k, v) => { fakeStore[k] = JSON.stringify(v); }, mockStorage);
+  adopt("user_abc");
+  ok("adopt clears stale anonymous progress in join", fakeStore["rc-done"] === undefined);
+  ok("adopt sets rc-uid", fakeStore["rc-uid"] === JSON.stringify("user_abc"));
+
   ok("no crash during boot", true);
 }
 

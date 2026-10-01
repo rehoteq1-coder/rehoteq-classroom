@@ -303,7 +303,7 @@ async function load(){
 
     const results = [];
     rs.forEach(d => { const x = d.data();
-      results.push({ uid: x.uid, quiz: x.quiz, score: x.score, total: x.total, pct: x.pct, grade: x.grade, at: new Date(x.takenAt) }); });
+      results.push({ id: d.id, uid: x.uid, quiz: x.quiz, score: x.score, total: x.total, pct: x.pct, grade: x.grade, at: new Date(x.takenAt) }); });
 
     const marksById = {};
     rows(mk).forEach(m => { marksById[m.id] = m; });
@@ -704,6 +704,63 @@ function openLearner(id){
 
   const close = () => back.remove();
   const back = h("div", { class: "sheet-back", onclick: e => { if (e.target === back) close(); } });
+
+  const removeHost = h("div", { style: "margin-top:20px;padding-top:16px;border-top:1px solid var(--line)" });
+  const removeBtn = h("button", { class: "btn danger sm block", onclick: () => confirmRemove() }, "Remove participant from class");
+
+  function confirmRemove(){
+    removeHost.replaceChildren(
+      h("div", { class: "callout bad", style: "margin-top:4px" },
+        h("div", null,
+          h("b", { text: "Remove this participant?" }),
+          h("p", { style: "margin:4px 0 10px;font-size:13px",
+            text: "This removes " + (p.name || p.email || "this learner") + " from the class and deletes their profile, progress, quiz results and submissions. This cannot be undone." }),
+          h("div", { class: "row row-tight" },
+            h("button", { class: "btn danger sm", onclick: doRemove }, "Yes, remove participant"),
+            h("button", { class: "btn quiet sm", onclick: () => removeHost.replaceChildren(removeBtn) }, "Cancel"))))
+    );
+  }
+
+  async function doRemove(){
+    removeHost.replaceChildren(
+      h("div", { class: "callout bad", style: "margin-top:4px" },
+        h("span", { class: "mute", text: "Removing participant from classroom..." }))
+    );
+    try {
+      const jobs = [
+        F.deleteDoc(F.doc(db, "learners", id)),
+        F.deleteDoc(F.doc(db, "users", id))
+      ];
+      (DATA.results || []).filter(r => r.uid === id).forEach(r => {
+        if (r.id) jobs.push(F.deleteDoc(F.doc(db, "results", r.id)));
+      });
+      (DATA.submissions || []).filter(s => s.uid === id).forEach(s => {
+        if (s.id) jobs.push(F.deleteDoc(F.doc(db, "submissions", s.id)));
+      });
+      Object.keys(DATA.marks || {}).forEach(mid => {
+        if (mid.endsWith("__" + id)) jobs.push(F.deleteDoc(F.doc(db, "marks", mid)));
+      });
+
+      await Promise.allSettled(jobs);
+
+      delete DATA.people[id];
+      DATA.results = (DATA.results || []).filter(r => r.uid !== id);
+      DATA.submissions = (DATA.submissions || []).filter(s => s.uid !== id);
+      Object.keys(DATA.marks || {}).forEach(mid => {
+        if (mid.endsWith("__" + id)) delete DATA.marks[mid];
+      });
+
+      close();
+      toast("Removed " + (p.name || p.email || "participant") + " from class", "ok");
+      paint();
+    } catch (err) {
+      toast("Failed to remove participant: " + (err.message || "error"));
+      confirmRemove();
+    }
+  }
+
+  removeHost.append(removeBtn);
+
   const sheet = h("div", { class: "sheet" },
     h("div", { class: "spread", style: "margin-bottom:14px" },
       h("div", { class: "row row-tight", style: "flex-wrap:nowrap" },
@@ -746,7 +803,8 @@ function openLearner(id){
 
     p.phone ? h("a", { class: "btn block", style: "margin-top:18px",
         href: "https://wa.me/" + String(p.phone).replace(/^0/, "234").replace(/\D/g, ""), target: "_blank", rel: "noopener" },
-        "Message on WhatsApp") : null
+        "Message on WhatsApp") : null,
+    removeHost
   );
   back.append(sheet);
   document.body.append(back);

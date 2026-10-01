@@ -49,7 +49,7 @@ export function loadClassicPage(file){
    SDK in by hand instead, exactly in the shape boot() would have produced. */
 export async function attachFirebase(w, uid){
   const F = await import("./fbmock/firebase-firestore.js?v=" + Date.now());
-  w.fb = { db: {}, doc: F.doc, getDoc: F.getDoc, setDoc: F.setDoc,
+  w.fb = { db: {}, doc: F.doc, getDoc: F.getDoc, setDoc: F.setDoc, deleteDoc: F.deleteDoc,
     collection: F.collection, getDocs: F.getDocs, query: F.query,
     where: F.where, orderBy: F.orderBy, limit: F.limit };
   w.user = { uid, email: uid + "@x.ng" };

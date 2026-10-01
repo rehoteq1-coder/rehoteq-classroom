@@ -251,7 +251,7 @@ console.log("\n--- Firestore rules in README ---");
   ok("the hand-in fields are whitelisted",
     subBlock.includes("hasOnly(['uid','assignment','link','note','submittedAt'])"));
   ok("a hand-in link must be https", subBlock.includes("matches('https://.*')"));
-  ok("hand-ins cannot be deleted", subBlock.includes("allow delete: if false"));
+  ok("hand-ins can only be deleted by admin", subBlock.includes("allow delete: if isAdmin()"));
   ok("a score is NOT writable through the hand-in", !subBlock.includes("request.resource.data.score"));
 
   const markBlock = rules.slice(rules.indexOf("match /marks"));
@@ -259,13 +259,14 @@ console.log("\n--- Firestore rules in README ---");
   ok("a mark cannot be written by a learner", !/allow write: if request\.auth/.test(markBlock));
   ok("a learner can read their own mark", markBlock.includes("resource.data.uid == request.auth.uid"));
   ok("a mark cannot exceed the total", markBlock.includes("score <= request.resource.data.points"));
-  ok("marks cannot be deleted", markBlock.includes("allow delete: if false"));
+  ok("marks can only be deleted by admin", markBlock.includes("allow delete: if isAdmin()"));
 
   ok("README explains the no-upload decision", /no file uploads, on purpose/i.test(r));
   ok("README explains the offline hand-in", /Saved on\s*\n?phone/i.test(r) || /Saved on phone/.test(r));
   ok("README has the streaming upgrade path", /LIVE STREAMING LATER/.test(r));
   ok("README has a test for marking", /mark it/.test(r));
-  ok("the service worker was bumped to v14", /rehoteq-classroom-v14/.test(sw));
+  const swv = +(/rehoteq-classroom-v(\d+)/.exec(sw) || [0, 0])[1];
+  ok("the service worker was bumped to v14 or later", swv >= 14);
 }
 
 console.log("\nclassroom: " + pass + " passed, " + fail + " failed");
