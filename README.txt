@@ -15,13 +15,28 @@ WHAT CHANGED IN V7 (interface only - the data model and Firestore rules are unch
 - Light / dark / follow-the-phone theme switch, remembered across all three pages.
 - No web fonts and no frameworks were added: the pages still open on a weak network.
 
-JOIN PAGE (new, cleaner sign-up link)
+JOIN PAGE (the link you share)
 Share YOUR-LINK/join.html on the flyer, WhatsApp and QR codes. Add ?track=Beginner or ?track=Masterclass to preselect the track.
-join.html = create account > onboarding form > automatic redirect to the dashboard (index.html). Returning learners go straight to the dashboard.
-index.html still has the same form as a safety net if someone signs up from inside the app.
+
+ONBOARDING IS NOW PROFILE FIRST, ACCOUNT LAST
+A new learner answers three short questions BEFORE being asked for an email and password:
+  Step 1 Who are you?        name, phone
+  Step 2 How will you learn? track, attendance, device
+  Step 3 Where are you going? experience, goal
+  Step 4 Create your account email, password, consent  -> dashboard
+Asking for a password first is the biggest reason people abandon a sign-up link, so the
+account is now the last step, once they have already invested three taps.
+Answers are held on the phone in localStorage ("rc-draft") the whole way, so a dropped
+network, a closed tab or a wrong password never loses them. The learner document can only
+be written after an account exists (the Firestore rules require request.auth.uid == uid),
+so it is saved the instant sign-up succeeds, then the draft is deleted.
+"I already have an account" sits at the top of every step for returning learners.
+If someone is already signed in but has no profile, they get the same three questions with
+no account step (the consent box moves to step 3), then go straight to the dashboard.
+index.html still has the same three-step form as a safety net if someone signs up inside the app.
 
 LEARNER FLOW
-Open link > Create account (Account card) > Onboarding form (name, phone, track, attendance, device, experience, goal, consent) > Personal dashboard.
+Open link > three onboarding questions > create account > Personal dashboard.
 Dashboard: greeting, progress, lessons/quizzes/average, next live class + Join button, announcement, 13 lessons, 7 timed quizzes.
 Everything still works offline. Progress, profile and quiz results save on the phone first and sync when online.
 
@@ -81,12 +96,15 @@ STEP 2: MAKE YOURSELF ADMIN (once)
 STEP 3: UPLOAD all files to GitHub (replace old ones):
 index.html, join.html, admin.html, styles.css, sw.js, manifest.json, icon-192.png,
 icon-512.png, README.txt (optional). styles.css is NEW - the pages are unstyled without it.
-sw.js is now v8 and caches styles.css too.
+sw.js is now v9 and caches styles.css too.
 
 STEP 4: REVIEW CHECKLIST
 [ ] Open twice online, then airplane mode: still opens, badge "saved for offline"
 [ ] Install button appears (Chrome Android) and installs the app
-[ ] Open join.html?track=Masterclass: track is preselected. Create account > step 2 form > errors for empty/invalid phone > submit > lands on dashboard
+[ ] Open join.html?track=Masterclass: step 1 asks name/phone with NO password on screen;
+    track is preselected on step 2; step 4 asks for the account; submit lands on dashboard
+[ ] Half-fill the form, close the tab, reopen join.html: your answers are still there
+[ ] On step 4 use an email that already exists: it offers "Log in instead" 
 [ ] (Also works from index.html) Sign up > onboarding form appears > errors show for empty/invalid phone > submit > dashboard says "Hello, <first name>"
 [ ] Firestore > learners has the new document
 [ ] Log out and log in again on another phone: goes straight to the dashboard (no second onboarding)
@@ -107,6 +125,6 @@ NOTES
 - Firebase web config is public by design; the rules protect the data.
 - Masterclass learners see a "lessons being added" note. Only Beginner content exists.
 - Learners store name, phone, goal and progress. Keep the consent line and only use the data for the training.
-- To update later change v8 to v9 in sw.js and upload again. Do this every time you edit
+- To update later change v9 to v10 in sw.js and upload again. Do this every time you edit
   index.html, join.html, admin.html or styles.css, otherwise phones keep the old cached copy.
 - Not built yet: certificates, Masterclass lessons, audio/video downloads, assignments, attendance QR.

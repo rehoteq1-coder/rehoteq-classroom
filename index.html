@@ -300,6 +300,7 @@ function boot(){
         if(lu&&lu!==u.uid){
           done=[];stamp=0;dirty=false;set(K,[]);set(K+"-t",0);set(K+"-d",false);
           results=[];set(RK,[]);labs={};set(LABK,{});
+          try{localStorage.removeItem("rc-draft")}catch(e){}
           profile=null;set("rc-profile",null);profDirty=false;set("rc-prof-d",false);
           session=null;try{localStorage.removeItem(SK)}catch(e){}
         }

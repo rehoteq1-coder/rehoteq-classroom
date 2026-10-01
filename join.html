@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b5537">
 <title>Join Rehoteq Academy</title>
-<meta name="description" content="Create your free Rehoteq Academy account and get a personal learning dashboard that works offline.">
+<meta name="description" content="Start your Rehoteq Academy training. Answer three quick questions and get a personal dashboard that works offline.">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="styles.css">
@@ -14,7 +14,7 @@
   .page{max-width:520px;margin:0 auto;padding:0 16px 40px}
   .banner{
     position:relative;overflow:hidden;color:#fff;background:var(--grad-ink);
-    padding:calc(30px + var(--safe-t)) 20px 74px;text-align:center;
+    padding:calc(28px + var(--safe-t)) 20px 72px;text-align:center;
   }
   .banner::before{
     content:"";position:absolute;inset:0;
@@ -28,29 +28,28 @@
   }
   .banner>*{position:relative}
   .banner .mark{
-    width:56px;height:56px;border-radius:17px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.22);
-    display:inline-grid;place-items:center;font-weight:800;font-size:25px;margin-bottom:14px;backdrop-filter:blur(6px);
+    width:54px;height:54px;border-radius:17px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.22);
+    display:inline-grid;place-items:center;font-weight:800;font-size:24px;margin-bottom:12px;backdrop-filter:blur(6px);
   }
-  .banner h1{font-size:clamp(25px,6.4vw,33px);color:#fff;margin-bottom:6px}
+  .banner h1{font-size:clamp(24px,6.2vw,32px);color:#fff;margin-bottom:6px}
   .banner p{color:rgba(232,246,238,.84);margin:0;font-size:15px;max-width:34ch;margin-inline:auto}
-  .lift-up{margin-top:-56px}
-  .perks{display:grid;gap:9px;margin-top:16px}
+  .lift-up{margin-top:-54px}
+  .perks{display:grid;gap:9px;margin-top:14px}
   .perk{display:flex;gap:11px;align-items:flex-start;font-size:14px;color:var(--ink-2);line-height:1.5}
-  .perk .pi{
-    width:26px;height:26px;border-radius:9px;flex:none;display:grid;place-items:center;font-size:13px;
-    background:var(--soft);color:var(--green);font-weight:800;
-  }
-  .steps{display:flex;gap:6px;align-items:center;justify-content:center;margin-bottom:4px}
-  .steps span{height:5px;width:44px;border-radius:99px;background:var(--line)}
+  .perk .pi{width:26px;height:26px;border-radius:9px;flex:none;display:grid;place-items:center;font-size:13px;
+    background:var(--soft);color:var(--green);font-weight:800}
+  .steps{display:flex;gap:5px;align-items:center;margin-bottom:12px}
+  .steps span{height:5px;flex:1;border-radius:99px;background:var(--line);transition:background var(--t)}
   .steps span.on{background:var(--grad-brand)}
+  .topline{display:flex;justify-content:flex-end;margin-bottom:2px}
 </style>
 </head>
 <body>
 
 <header class="banner">
   <span class="mark">R</span>
-  <h1>Join Rehoteq Academy</h1>
-  <p>Two quick steps and your personal dashboard is ready — even on a weak network.</p>
+  <h1>Start your training</h1>
+  <p id="bannersub">Three quick questions. Your dashboard is ready at the end.</p>
 </header>
 
 <div class="page lift-up">
@@ -75,6 +74,15 @@
 <div class="toast-host" id="toasts"></div>
 
 <script type="module">
+/* =====================================================================
+   JOIN — profile first, account last.
+   The learner answers three friendly questions before being asked for a
+   password. Answers live in localStorage ("rc-draft") the whole way, so a
+   dropped network or a closed tab never loses them. The Firestore learner
+   document can only be written once an account exists, so it is saved the
+   moment sign-up succeeds.
+   ===================================================================== */
+
 const CFG = {
   apiKey: "AIzaSyAZ12xbUzdzc_5L5JY6d3AlIvPxLKB60TA",
   authDomain: "rehoteq-classroom.firebaseapp.com",
@@ -102,16 +110,17 @@ function h(tag, props, ...kids){
 function toast(msg, kind){
   const t = h("div", { class: "toast" + (kind ? " " + kind : ""), text: msg });
   document.getElementById("toasts").append(t);
-  setTimeout(() => t.remove(), 2800);
+  setTimeout(() => t.remove(), 3000);
 }
 const put  = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} };
 const getL = k => { try { return JSON.parse(localStorage.getItem(k)); } catch(e){ return null; } };
+const del  = k => { try { localStorage.removeItem(k); } catch(e){} };
 
 const ERR = {
   "auth/invalid-credential":"Wrong email or password.",
   "auth/wrong-password":"Wrong email or password.",
-  "auth/user-not-found":"No account with that email. Choose Create account.",
-  "auth/email-already-in-use":"That email already has an account. Choose Log in.",
+  "auth/user-not-found":"No account with that email yet.",
+  "auth/email-already-in-use":"That email already has an account.",
   "auth/weak-password":"Use at least 6 characters.",
   "auth/invalid-email":"Check the email address.",
   "auth/network-request-failed":"No network. Try again when you have signal.",
@@ -119,7 +128,35 @@ const ERR = {
 };
 const nice = e => ERR[e.code] || "Something went wrong. Try again.";
 
+/* ---------- wizard definition ---------- */
+const STEPS = [
+  { title: "Who are you?", note: "So your teacher knows who is in the room.",
+    fields: [["name","Full name","text","Your full name"],
+             ["phone","Phone or WhatsApp number","tel","e.g. 08012345678","Used for class reminders only."]] },
+  { title: "How will you learn?", note: "This shapes your timetable and reminders.",
+    fields: [["track","Track","select",["Beginner","Masterclass"]],
+             ["mode","How will you attend?","select",["In person (Okitipupa)","Online (Zoom or Google Meet)","Both"]],
+             ["device","Device you will learn on","select",["Phone","Laptop","Both"]]] },
+  { title: "Where are you going?", note: "We use this to suggest the right projects for you.",
+    fields: [["level","Your experience","select",["Complete beginner","Some experience","I already build projects"]],
+             ["goal","Main goal","select",["Get skills for a job","Freelance and earn","School or church project","Start my own business","Just learning"]]] }
+];
+const PROFILE_KEYS = ["name","phone","track","mode","device","level","goal"];
+
 let Au, F, auth, db;
+let draft = getL("rc-draft") || {};
+let step = 0;
+let authed = null;      // signed-in user, when they already have an account
+let busy = false;       // guards onAuthStateChanged while we finish sign-up
+let mode = "wizard";    // "wizard" | "login"
+
+const preset = new URLSearchParams(location.search).get("track");
+if (!draft.track && (preset === "Beginner" || preset === "Masterclass")) draft.track = preset;
+
+const totalScreens = () => authed ? STEPS.length : STEPS.length + 1;
+const saveDraft = () => put("rc-draft", draft);
+
+/* ---------- boot ---------- */
 try {
   const [A, a, f] = await Promise.all([
     import(SDK + "firebase-app.js"), import(SDK + "firebase-auth.js"), import(SDK + "firebase-firestore.js")
@@ -129,160 +166,255 @@ try {
   auth = Au.getAuth(app); db = F.getFirestore(app);
   Au.onAuthStateChanged(auth, route);
 } catch (e) {
-  root.replaceChildren(h("div", { class: "empty" },
-    h("div", { class: "em", text: "⛰" }),
-    h("b", { text: "You need internet to sign up" }),
-    h("div", { class: "mute", text: "Creating the account is the only step that needs data. Reconnect and refresh." })));
+  // Offline on arrival: let them answer anyway, we ask for the account at the end.
+  render();
+  toast("You are offline — you can still answer, we will connect at the end");
 }
 
-function stepBar(n){
-  return h("div", { class: "steps" }, h("span", { class: "on" }), h("span", { class: n >= 2 ? "on" : "" }));
-}
 function adopt(uid){
   const prev = getL("rc-uid");
   if (prev && prev !== uid)
-    ["rc-done","rc-done-t","rc-done-d","rc-results","rc-session","rc-profile","rc-prof-d","rc-lab","rc-out"]
+    ["rc-done","rc-done-t","rc-done-d","rc-results","rc-session","rc-profile","rc-prof-d","rc-lab","rc-out","rc-draft"]
       .forEach(k => localStorage.removeItem(k));
   put("rc-uid", uid);
 }
 
-/* ---------------- Step 1 · account ---------------- */
-function accountView(mode, prefillMsg){
-  root.replaceChildren();
-  const email = h("input", { type: "email", placeholder: "you@example.com", autocomplete: "email", inputmode: "email" });
-  const pass  = h("input", { type: "password", placeholder: "At least 6 characters",
-    autocomplete: mode === "signup" ? "new-password" : "current-password" });
-  const err = h("div", { class: "err", text: prefillMsg || "" });
-  const go = h("button", { class: "btn block lg" }, mode === "signup" ? "Create my account" : "Log in");
+async function route(u){
+  if (busy) return;                       // we are mid sign-up; do not hijack the screen
+  if (!u){ authed = null; render(); return; }
 
-  const submit = async () => {
-    err.textContent = "";
-    if (!email.value.trim()){ err.textContent = "Enter your email."; email.focus(); return; }
-    if (pass.value.length < 6){ err.textContent = "Your password needs at least 6 characters."; pass.focus(); return; }
-    go.disabled = true; go.textContent = "Please wait...";
-    try {
-      const fn = mode === "signup" ? Au.createUserWithEmailAndPassword : Au.signInWithEmailAndPassword;
-      await fn(auth, email.value.trim(), pass.value);
-    } catch (e) {
-      err.textContent = nice(e);
-      go.disabled = false; go.textContent = mode === "signup" ? "Create my account" : "Log in";
+  authed = u; adopt(u.uid);
+  const local = getL("rc-profile");
+  if (local && local.uid === u.uid){ del("rc-draft"); location.replace("./"); return; }
+
+  loadingCard("Checking your account...");
+  try {
+    const snap = await F.getDoc(F.doc(db, "learners", u.uid));
+    if (snap.exists()){
+      put("rc-profile", snap.data()); put("rc-prof-d", false); del("rc-draft");
+      location.replace("./"); return;
     }
-  };
-  go.onclick = submit;
-  [email, pass].forEach(i => i.onkeydown = ev => { if (ev.key === "Enter") submit(); });
-
-  root.append(
-    stepBar(1),
-    h("div", { class: "eyebrow", style: "margin-top:10px", text: "Step 1 of 2 · Account" }),
-    h("h2", { style: "font-size:20px;margin:2px 0 4px", text: mode === "signup" ? "Create your account" : "Welcome back" }),
-    h("p", { class: "mute", text: "Use an email you can open — it is how you log in on any phone." }),
-    h("label", { class: "field" }, h("span", { class: "lbl", text: "Email" }), email),
-    h("label", { class: "field" }, h("span", { class: "lbl", text: "Password" }), pass),
-    err, go,
-    h("button", { class: "btn quiet block", style: "margin-top:8px",
-      onclick: () => accountView(mode === "signup" ? "login" : "signup") },
-      mode === "signup" ? "I already have an account" : "Create a new account"),
-    mode === "login" ? h("button", { class: "btn quiet block", onclick: async () => {
-      try { await Au.sendPasswordResetEmail(auth, email.value.trim()); err.textContent = "Reset email sent. Check your inbox."; }
-      catch (e) { err.textContent = nice(e); }
-    } }, "Forgot password") : null
-  );
+  } catch (e) { /* offline or unreadable: fall through and let them fill the form */ }
+  // Signed in but no profile yet: run the same wizard, minus the account step.
+  if (step > STEPS.length - 1) step = STEPS.length - 1;
+  render();
 }
 
-/* ---------------- Routing ---------------- */
-async function route(u){
-  if (!u){ accountView("signup"); return; }
-  adopt(u.uid);
-  const local = getL("rc-profile");
-  if (local && local.uid === u.uid){ location.replace("./"); return; }
-
+function loadingCard(msg){
   root.replaceChildren(
     h("div", { class: "row", style: "flex-wrap:nowrap" },
       h("div", { class: "skel", style: "width:38px;height:38px;border-radius:50%" }),
       h("div", { style: "flex:1" },
         h("div", { class: "skel", style: "width:60%;margin-bottom:7px" }),
         h("div", { class: "skel", style: "width:40%" }))),
-    h("p", { class: "mute", style: "margin-top:14px", text: "Checking your account..." }));
-
-  try {
-    const snap = await F.getDoc(F.doc(db, "learners", u.uid));
-    if (snap.exists()){ put("rc-profile", snap.data()); put("rc-prof-d", false); location.replace("./"); return; }
-  } catch (e) { /* offline: fall through to the form */ }
-  formView(u);
+    h("p", { class: "mute", style: "margin-top:14px", text: msg }));
 }
 
-/* ---------------- Step 2 · profile ---------------- */
-function formView(u){
+function progress(){
+  const bar = h("div", { class: "steps" });
+  for (let i = 0; i < totalScreens(); i++) bar.append(h("span", { class: i <= step ? "on" : "" }));
+  return bar;
+}
+
+/* A returning learner must always be one tap from logging in. */
+function loginLink(){
+  return h("div", { class: "topline" },
+    h("button", { class: "btn quiet sm", onclick: () => { mode = "login"; render(); } }, "I already have an account"));
+}
+
+function render(){
+  if (mode === "login"){ loginView(); return; }
+  if (step < STEPS.length) profileStep();
+  else accountStep();
+}
+
+/* =====================================================================
+   Profile steps 1-3
+   ===================================================================== */
+function profileStep(){
+  const spec = STEPS[step];
+  // Already signed in (e.g. logged in, or created the account on a previous visit):
+  // there is no account step, so the last profile step is where we finish.
+  const finishesHere = authed && step === STEPS.length - 1;
   root.replaceChildren();
-  const mk = {
-    text: (ph, type) => h("input", { type: type || "text", placeholder: ph }),
-    sel:  opts => { const s = h("select"); s.append(new Option("Choose...", ""));
-                    opts.forEach(o => s.append(new Option(o, o))); return s; }
-  };
-  const f = {
-    name:   mk.text("Your full name"),
-    phone:  mk.text("e.g. 08012345678", "tel"),
-    track:  mk.sel(["Beginner", "Masterclass"]),
-    mode:   mk.sel(["In person (Okitipupa)", "Online (Zoom or Google Meet)", "Both"]),
-    device: mk.sel(["Phone", "Laptop", "Both"]),
-    level:  mk.sel(["Complete beginner", "Some experience", "I already build projects"]),
-    goal:   mk.sel(["Get skills for a job", "Freelance and earn", "School or church project", "Start my own business", "Just learning"])
-  };
-  f.name.autocomplete = "name"; f.phone.autocomplete = "tel";
-
-  const preset = new URLSearchParams(location.search).get("track");
-  if (preset === "Beginner" || preset === "Masterclass") f.track.value = preset;
-
-  const labels = {
-    name: ["Full name", ""], phone: ["Phone or WhatsApp number", "Your teacher uses this for class reminders."],
-    track: ["Track", ""], mode: ["How will you attend?", ""], device: ["Device you will learn on", ""],
-    level: ["Your experience", ""], goal: ["Main goal", ""]
-  };
-
-  const consent = h("input", { type: "checkbox" });
+  const nodes = {};
   const err = h("div", { class: "err" });
-  const go = h("button", { class: "btn block lg" }, "Open my dashboard");
 
-  go.onclick = async () => {
-    const v = {};
-    for (const k in f) v[k] = String(f[k].value || "").trim();
-    v.name = v.name.slice(0, 80);
-    const phone = v.phone.replace(/[\s-]/g, "");
-    if (v.name.length < 2){ err.textContent = "Enter your full name."; f.name.focus(); return; }
-    if (!/^\+?\d{10,15}$/.test(phone)){ err.textContent = "Enter a valid phone number, e.g. 08012345678."; f.phone.focus(); return; }
-    for (const k in v) if (!v[k]){ err.textContent = "Please complete every field."; f[k].focus(); return; }
-    if (!consent.checked){ err.textContent = "Please tick the agreement box."; return; }
-
-    v.phone = phone; v.uid = u.uid; v.createdAt = Date.now();
-    go.disabled = true; go.textContent = "Setting up your dashboard...";
-    err.textContent = "";
-    put("rc-profile", v); put("rc-prof-d", true);
-    let offline = false;
-    try {
-      await Promise.race([
-        F.setDoc(F.doc(db, "learners", u.uid), v),
-        new Promise((_, r) => setTimeout(() => r(new Error("slow")), 10000))
-      ]);
-      put("rc-prof-d", false);
-    } catch (e) {
-      offline = true;
-      toast("Saved on this phone — it uploads when you have signal");
+  const body = spec.fields.map(f => {
+    const [key, label, type, opt, hint] = f;
+    let node;
+    if (type === "select"){
+      node = h("select");
+      node.append(new Option("Choose...", ""));
+      opt.forEach(o => node.append(new Option(o, o)));
+    } else {
+      node = h("input", { type, placeholder: opt, autocomplete: key === "name" ? "name" : key === "phone" ? "tel" : "off" });
     }
-    setTimeout(() => location.replace("./"), offline ? 1400 : 0);
+    if (draft[key]) node.value = draft[key];
+    nodes[key] = node;
+    return h("label", { class: "field" }, h("span", { class: "lbl", text: label }), node,
+      hint ? h("span", { class: "hint", text: hint }) : null);
+  });
+
+  const collect = () => { for (const k in nodes) draft[k] = String(nodes[k].value || "").trim(); saveDraft(); };
+
+  // Consent lives on whichever screen is last, so it is never skipped.
+  let consent = null;
+  if (finishesHere){
+    consent = h("input", { type: "checkbox" });
+    if (draft.consent) consent.checked = true;
+  }
+
+  const next = h("button", { class: "btn block lg", style: "margin-top:4px" },
+    finishesHere ? "Open my dashboard" : "Continue →");
+  next.onclick = async () => {
+    collect();
+    if (step === 0){
+      if ((draft.name || "").length < 2){ err.textContent = "Enter your full name."; nodes.name.focus(); return; }
+      draft.name = draft.name.slice(0, 80);
+      const phone = (draft.phone || "").replace(/[\s-]/g, "");
+      if (!/^\+?\d{10,15}$/.test(phone)){ err.textContent = "Enter a valid phone number, e.g. 08012345678."; nodes.phone.focus(); return; }
+      draft.phone = phone; saveDraft();
+    } else {
+      for (const f of spec.fields) if (!draft[f[0]]){ err.textContent = "Please answer every question on this step."; return; }
+    }
+    if (finishesHere){
+      draft.consent = consent.checked; saveDraft();
+      if (!consent.checked){ err.textContent = "Please tick the agreement box to continue."; return; }
+      next.disabled = true; next.textContent = "Setting up your dashboard...";
+      busy = true;
+      await saveProfile();
+      return;
+    }
+    step++; render(); window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   root.append(
-    stepBar(2),
-    h("div", { class: "eyebrow", style: "margin-top:10px", text: "Step 2 of 2 · Your profile" }),
-    h("h2", { style: "font-size:20px;margin:2px 0 4px", text: "Tell us about you" }),
-    h("p", { class: "mute", text: "One minute. This is what sets up your dashboard and your teacher's register." }),
-    ...Object.keys(f).map(k => h("label", { class: "field" },
-      h("span", { class: "lbl", text: labels[k][0] }), f[k],
-      labels[k][1] ? h("span", { class: "hint", text: labels[k][1] }) : null)),
+    loginLink(), progress(),
+    h("div", { class: "eyebrow", text: "Step " + (step + 1) + " of " + totalScreens() }),
+    h("h2", { style: "font-size:21px;margin:2px 0 4px", text: spec.title }),
+    h("p", { class: "mute", text: spec.note }),
+    ...body,
+    consent ? h("label", { class: "check" }, consent,
+      h("span", { text: "I agree that Rehoteq Academy stores my name, phone and progress to run my training." })) : null,
+    err, next,
+    step > 0 ? h("button", { class: "btn quiet block", style: "margin-top:6px",
+      onclick: () => { collect(); step--; render(); } }, "← Back") : null
+  );
+}
+
+/* =====================================================================
+   Final step — create the account (or save, if already signed in)
+   ===================================================================== */
+function accountStep(){
+  root.replaceChildren();
+  const email = h("input", { type: "email", placeholder: "you@example.com", autocomplete: "email", inputmode: "email" });
+  const pass  = h("input", { type: "password", placeholder: "At least 6 characters", autocomplete: "new-password" });
+  if (draft.email) email.value = draft.email;
+  const consent = h("input", { type: "checkbox" });
+  if (draft.consent) consent.checked = true;
+  const err = h("div", { class: "err" });
+  const go = h("button", { class: "btn block lg", style: "margin-top:4px" }, "Create account & open dashboard");
+
+  go.onclick = async () => {
+    draft.email = email.value.trim(); draft.consent = consent.checked; saveDraft();
+    err.textContent = "";
+    if (!draft.email){ err.textContent = "Enter your email."; email.focus(); return; }
+    if (pass.value.length < 6){ err.textContent = "Your password needs at least 6 characters."; pass.focus(); return; }
+    if (!consent.checked){ err.textContent = "Please tick the agreement box to continue."; return; }
+    if (!Au){ err.textContent = "You need internet for this last step. Your answers are saved."; return; }
+
+    busy = true; go.disabled = true; go.textContent = "Creating your account...";
+    try {
+      const cred = await Au.createUserWithEmailAndPassword(auth, draft.email, pass.value);
+      authed = cred.user;
+      await saveProfile();
+    } catch (e) {
+      busy = false; go.disabled = false; go.textContent = "Create account & open dashboard";
+      if (e.code === "auth/email-already-in-use"){
+        err.replaceChildren("That email already has an account. ");
+        err.append(h("button", { class: "btn quiet sm", onclick: () => { mode = "login"; render(); } }, "Log in instead"));
+        return;
+      }
+      err.textContent = nice(e);
+    }
+  };
+
+  root.append(
+    loginLink(), progress(),
+    h("div", { class: "eyebrow", text: "Last step · Save your place" }),
+    h("h2", { style: "font-size:21px;margin:2px 0 4px", text: "Create your account" }),
+    h("p", { class: "mute", text: "This is how you log back in on any phone and keep your progress." }),
+    h("div", { class: "callout ok", style: "margin-top:12px" }, h("div", null,
+      h("b", { text: "Your answers are saved. " }),
+      (draft.name ? draft.name.split(" ")[0] + ", y" : "Y") + "ou are one step from your dashboard.")),
+    h("label", { class: "field" }, h("span", { class: "lbl", text: "Email" }), email),
+    h("label", { class: "field" }, h("span", { class: "lbl", text: "Password" }), pass),
     h("label", { class: "check" }, consent,
       h("span", { text: "I agree that Rehoteq Academy stores my name, phone and progress to run my training." })),
     err, go,
-    h("button", { class: "btn quiet block", style: "margin-top:6px", onclick: () => Au.signOut(auth) }, "Use a different account")
+    h("button", { class: "btn quiet block", style: "margin-top:6px",
+      onclick: () => { step--; render(); } }, "← Back")
+  );
+}
+
+/* Shared by the account step and the already-signed-in path. */
+async function saveProfile(){
+  adopt(authed.uid);
+  const v = { uid: authed.uid, createdAt: Date.now() };
+  PROFILE_KEYS.forEach(k => v[k] = draft[k]);     // exactly the keys the Firestore rules allow
+  put("rc-profile", v); put("rc-prof-d", true);
+  let offline = false;
+  try {
+    await Promise.race([
+      F.setDoc(F.doc(db, "learners", authed.uid), v),
+      new Promise((_, r) => setTimeout(() => r(new Error("slow")), 10000))
+    ]);
+    put("rc-prof-d", false);
+  } catch (e) {
+    offline = true;
+    toast("Saved on this phone — it uploads when you have signal");
+  }
+  del("rc-draft");
+  setTimeout(() => location.replace("./"), offline ? 1400 : 0);
+}
+
+/* =====================================================================
+   Returning learner — log in
+   ===================================================================== */
+function loginView(){
+  root.replaceChildren();
+  const email = h("input", { type: "email", placeholder: "you@example.com", autocomplete: "email", inputmode: "email" });
+  const pass  = h("input", { type: "password", placeholder: "Your password", autocomplete: "current-password" });
+  if (draft.email) email.value = draft.email;
+  const err = h("div", { class: "err" });
+  const go = h("button", { class: "btn block lg" }, "Log in");
+
+  const submit = async () => {
+    err.textContent = "";
+    if (!email.value.trim() || !pass.value){ err.textContent = "Enter your email and password."; return; }
+    if (!Au){ err.textContent = "You need internet to log in."; return; }
+    go.disabled = true; go.textContent = "Please wait...";
+    try { await Au.signInWithEmailAndPassword(auth, email.value.trim(), pass.value); }
+    catch (e){ err.textContent = nice(e); go.disabled = false; go.textContent = "Log in"; }
+  };
+  go.onclick = submit;
+  [email, pass].forEach(i => i.onkeydown = ev => { if (ev.key === "Enter") submit(); });
+
+  root.append(
+    h("div", { class: "eyebrow", text: "Returning learner" }),
+    h("h2", { style: "font-size:21px;margin:2px 0 4px", text: "Welcome back" }),
+    h("p", { class: "mute", text: "Log in and your lessons, labs and quiz scores come straight back." }),
+    h("label", { class: "field" }, h("span", { class: "lbl", text: "Email" }), email),
+    h("label", { class: "field" }, h("span", { class: "lbl", text: "Password" }), pass),
+    err, go,
+    h("button", { class: "btn quiet block", style: "margin-top:8px", onclick: async () => {
+      if (!Au){ err.textContent = "You need internet for this."; return; }
+      try { await Au.sendPasswordResetEmail(auth, email.value.trim()); err.textContent = "Reset email sent. Check your inbox."; }
+      catch (e){ err.textContent = nice(e); }
+    } }, "Forgot password"),
+    h("button", { class: "btn quiet block", onclick: () => { mode = "wizard"; render(); } },
+      draft.name ? "← Back to my answers" : "← I am new here")
   );
 }
 </script>
