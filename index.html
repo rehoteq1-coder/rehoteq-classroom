@@ -179,11 +179,15 @@ function get(k,d){try{var v=localStorage.getItem(k);return v===null?d:JSON.parse
 function set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 
 var K="rc-done", L="rc-last", SK="rc-session", RK="rc-results", OK="rc-out", LABK="rc-lab";
+var MATK="rc-mats", ASGK="rc-asg", SUBK="rc-subs", MRKK="rc-marks", SOK="rc-sub-out";
 var app=document.getElementById("app"), chrome=document.getElementById("chrome"), tabbar=document.getElementById("tabbar");
 
 var done=get(K,[]), last=get(L,0), stamp=get(K+"-t",0), dirty=get(K+"-d",false);
 var session=get(SK,null), results=get(RK,[]), outbox=get(OK,[]), labs=get(LABK,{});
 var profile=get("rc-profile",null), cfgc=get("rc-cfg",null), profDirty=get("rc-prof-d",false), profChecked=false;
+/* Classroom content. Cached so the Class tab still works with no network. */
+var mats=get(MATK,[]), asgs=get(ASGK,[]), subs=get(SUBK,{}), marks=get(MRKK,{}), subOut=get(SOK,[]);
+var classLoaded=false, sendingSub=false;
 
 /* ---------- tracks ---------- */
 var TVK="rc-track-view";
@@ -320,7 +324,7 @@ function loadProfile(){
 function save(){stamp=Date.now();dirty=true;set(K,done);set(K+"-t",stamp);set(K+"-d",true);sync()}
 function say(m){syncMsg=m;var e=document.getElementById("sync");if(e)e.textContent=m}
 function sync(){
-  syncResults();pushProfile();
+  syncResults();pushProfile();pushSubs();
   if(!fb||!user)return;
   if(!navigator.onLine){say(dirty?"Saved on this phone. Will sync when online.":"");return}
   say("Syncing...");
@@ -363,6 +367,8 @@ function boot(){
   Promise.all([import(b+"firebase-app.js"),import(b+"firebase-auth.js"),import(b+"firebase-firestore.js")]).then(function(m){
     var a=m[0].initializeApp(FIREBASE_CONFIG), au=m[1].getAuth(a);
     fb={auth:au,db:m[2].getFirestore(a),doc:m[2].doc,getDoc:m[2].getDoc,setDoc:m[2].setDoc,
+      collection:m[2].collection,getDocs:m[2].getDocs,query:m[2].query,where:m[2].where,
+      orderBy:m[2].orderBy,limit:m[2].limit,
       signIn:m[1].signInWithEmailAndPassword,signUp:m[1].createUserWithEmailAndPassword,
       signOut:m[1].signOut,reset:m[1].sendPasswordResetEmail};
     m[1].onAuthStateChanged(au,function(u){
@@ -374,12 +380,13 @@ function boot(){
           try{localStorage.removeItem("rc-draft")}catch(e){}
           profile=null;set("rc-profile",null);profDirty=false;set("rc-prof-d",false);
           session=null;try{localStorage.removeItem(SK)}catch(e){}
+          subs={};marks={};subOut=[];set(SUBK,{});set(MRKK,{});set(SOK,[]);classLoaded=false;
         }
         set("rc-uid",u.uid);
       }
       user=u;authReady=true;profChecked=false;
       if(!u&&view==="onboard")view="home";
-      if(u){sync();loadProfile()}
+      if(u){sync();loadProfile();loadClassroom()}
       render();
     });
   }).catch(function(){fbFail=true;render()});
@@ -400,7 +407,7 @@ function status(){
   else { netPill.className="pill gold"; add(netPill,"Offline · still saving"); }
 }
 
-var TABS=[["learn","◈","Learn"],["quiz","◇","Quizzes"],["me","◎","Me"]];
+var TABS=[["learn","◈","Learn"],["class","◆","Class"],["quiz","◇","Quizzes"],["me","◎","Me"]];
 function buildTabs(){
   var inner=tabbar.firstElementChild;
   inner.replaceChildren();
@@ -420,6 +427,7 @@ function render(){
   if(view==="home") home();
   else if(view==="quiz") showQuiz();
   else if(view==="result") showResult(lastR);
+  else if(typeof view==="string"&&view.indexOf("asg:")===0) openAssignment(view.slice(4));
   else openLesson(view);
 }
 
@@ -443,11 +451,12 @@ function home(){
   var put=function(n){if(n)app.append(n)};
   put(heroCard());
   if(tab==="learn"){ put(trackSwitch()); put(classCard()); put(continueCard()); lessonList(); }
+  else if(tab==="class"){ classPanel(); }
   else if(tab==="quiz"){ put(trackSwitch()); put(quizPanel()); }
   else { put(profileCard()); put(account()); put(aboutCard()); }
   app.append(h("p",{class:"faint center",style:"margin:22px 0 8px",
     text:"Everything saves on this device first. Built for weak networks."}));
-  land(tab==="learn"?"Lessons":tab==="quiz"?"Quizzes":"My account");
+  land(tab==="learn"?"Lessons":tab==="class"?"Class":tab==="quiz"?"Quizzes":"My account");
 }
 
 /* Both tracks are visible to everyone. The learner's own track is the default,
@@ -823,6 +832,260 @@ function confettiBurst(){
 /* =====================================================================
    PROFILE / ACCOUNT ("Me" tab)
    ===================================================================== */
+/* =====================================================================
+   CLASS · live sessions, study materials, assignments
+   Everything here is cached on the device, so the tab still opens with
+   no network. Submissions are a link plus a note: nothing is uploaded,
+   which keeps it cheap and survives a weak connection.
+   ===================================================================== */
+function subId(aid){return aid+"__"+(user?user.uid:"anon")}
+function forMe(x){
+  // "All" content, or content aimed at the track the learner is enrolled on.
+  var t=x.track||"All";
+  if(t==="All")return true;
+  if(validProfile()&&profile.track===t)return true;
+  return t===trackKey;
+}
+function platformOf(url){
+  var u=String(url||"");
+  if(u.indexOf("meet.google.")>=0)return "Google Meet";
+  if(u.indexOf("zoom.")>=0)return "Zoom";
+  if(u.indexOf("youtube.")>=0||u.indexOf("youtu.be")>=0)return "the live stream";
+  return "the live class";
+}
+function safeLink(u){u=String(u||"").trim();return u.indexOf("https://")===0?u:""}
+function fmtDay(ms){
+  if(!ms)return "";
+  return new Date(ms).toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"});
+}
+function dueInfo(a){
+  if(!a.dueAt)return {label:"No deadline",tone:""};
+  var d=a.dueAt-Date.now(), day=864e5;
+  if(d<0)return {label:"Due "+fmtDay(a.dueAt),tone:"bad",over:true};
+  if(d<day)return {label:"Due today",tone:"gold"};
+  if(d<2*day)return {label:"Due tomorrow",tone:"gold"};
+  return {label:"Due "+fmtDay(a.dueAt),tone:""};
+}
+function asgState(a){
+  var m=marks[a.id], sb=subs[a.id];
+  if(m)return {key:"marked",label:m.score+"/"+(m.points||100),tone:gradeTone(m.grade||gradeOf(Math.round(m.score/(m.points||100)*100)))};
+  if(sb&&sb.pending)return {key:"pending",label:"Saved on phone",tone:"gold"};
+  if(sb)return {key:"sent",label:"Handed in",tone:"ok"};
+  if(dueInfo(a).over)return {key:"late",label:"Overdue",tone:"bad"};
+  return {key:"todo",label:"To do",tone:""};
+}
+function pendingCount(){
+  var n=0;
+  asgs.filter(forMe).forEach(function(a){var st=asgState(a).key;if(st==="todo"||st==="late")n++});
+  return n;
+}
+
+/* ---------- loading ---------- */
+function loadClassroom(){
+  if(!fb||!user)return;
+  var db=fb.db, q=fb.query, col=fb.collection;
+  function listOf(snap){var out=[];snap.forEach(function(d){var x=d.data();x.id=d.id;out.push(x)});return out}
+  Promise.allSettled([
+    fb.getDoc(fb.doc(db,"config","classroom")),
+    fb.getDocs(q(col(db,"materials"),fb.orderBy("createdAt","desc"),fb.limit(60))),
+    fb.getDocs(q(col(db,"assignments"),fb.orderBy("createdAt","desc"),fb.limit(40))),
+    fb.getDocs(q(col(db,"submissions"),fb.where("uid","==",user.uid))),
+    fb.getDocs(q(col(db,"marks"),fb.where("uid","==",user.uid)))
+  ]).then(function(r){
+    if(r[0].status==="fulfilled"&&r[0].value.exists()){cfgc=r[0].value.data();set("rc-cfg",cfgc)}
+    if(r[1].status==="fulfilled"){mats=listOf(r[1].value);set(MATK,mats)}
+    if(r[2].status==="fulfilled"){asgs=listOf(r[2].value);set(ASGK,asgs)}
+    if(r[3].status==="fulfilled"){
+      var keepPending={},k;
+      for(k in subs) if(subs[k]&&subs[k].pending) keepPending[k]=subs[k];
+      subs={};
+      listOf(r[3].value).forEach(function(x){subs[x.assignment]={link:x.link,note:x.note,submittedAt:x.submittedAt}});
+      for(k in keepPending) subs[k]=keepPending[k];   // never lose an unsent hand-in
+      set(SUBK,subs);
+    }
+    if(r[4].status==="fulfilled"){
+      marks={};
+      listOf(r[4].value).forEach(function(x){marks[x.assignment]={score:x.score,points:x.points,grade:x.grade,feedback:x.feedback,markedAt:x.markedAt}});
+      set(MRKK,marks);
+    }
+    classLoaded=true;
+    if(view==="home"&&tab==="class")home();
+    else if(view==="home")buildTabs();
+  }).catch(function(){classLoaded=true});
+}
+
+/* ---------- sending a hand-in ---------- */
+function pushSubs(){
+  if(!subOut.length||!fb||!user||!navigator.onLine||sendingSub)return;
+  var item=subOut[0];
+  sendingSub=true;
+  var slow=new Promise(function(_,rj){setTimeout(function(){rj(new Error("slow"))},15000)});
+  Promise.race([fb.setDoc(fb.doc(fb.db,"submissions",subId(item.assignment)),
+    {uid:user.uid,assignment:item.assignment,link:item.link,note:item.note,submittedAt:item.submittedAt}),slow])
+  .then(function(){
+    subOut=subOut.filter(function(x){return x.assignment!==item.assignment});set(SOK,subOut);
+    if(subs[item.assignment])delete subs[item.assignment].pending;
+    set(SUBK,subs);sendingSub=false;
+    if(view==="home"&&tab==="class")home();
+    pushSubs();
+  }).catch(function(){sendingSub=false});
+}
+function submitWork(aid,link,note){
+  var rec={link:link,note:note,submittedAt:Date.now(),pending:true};
+  subs[aid]=rec;set(SUBK,subs);
+  subOut=subOut.filter(function(x){return x.assignment!==aid});
+  subOut.push({assignment:aid,link:link,note:note,submittedAt:rec.submittedAt});
+  set(SOK,subOut);
+  pushSubs();
+}
+
+/* ---------- the Class tab ---------- */
+function classPanel(){
+  app.append(liveCard());
+  var mine=mats.filter(forMe), work=asgs.filter(forMe);
+
+  /* assignments */
+  var aw=h("div",{class:"card rise rise-1"},
+    h("div",{class:"card-title"},h("h2",{text:"Assignments"}),
+      work.length?h("span",{class:"pill ghost",text:pendingCount()?pendingCount()+" to do":"All handed in"}):null));
+  if(!work.length){
+    aw.append(h("p",{class:"mute",style:"margin:4px 0 0",
+      text:classLoaded?"No assignments yet. Your trainer will post them here.":"Loading your assignments..."}));
+  } else {
+    work.forEach(function(a){
+      var st=asgState(a), due=dueInfo(a);
+      aw.append(h("button",{class:"item",onclick:function(){openAssignment(a.id)}},
+        h("span",{class:"dot"+(st.key==="marked"?" ok":st.key==="sent"?" ok":" num"),
+          text:st.key==="marked"?"✓":st.key==="sent"?"↑":"✎"}),
+        h("span",{class:"it-body"},
+          h("span",{class:"it-title",text:a.title}),
+          h("span",{class:"it-sub",text:due.label+(a.points?" · "+a.points+" marks":"")})),
+        h("span",{class:"pill "+st.tone,text:st.label})));
+    });
+  }
+  app.append(aw);
+
+  /* study materials */
+  var mw=h("div",{class:"card rise rise-2"},
+    h("div",{class:"card-title"},h("h2",{text:"Study materials"}),
+      mine.length?h("span",{class:"pill ghost",text:mine.length+" shared"}):null));
+  if(!mine.length){
+    mw.append(h("p",{class:"mute",style:"margin:4px 0 0",
+      text:classLoaded?"Nothing shared yet. Notes and videos from your trainer will appear here.":"Loading your materials..."}));
+  } else {
+    mine.forEach(function(x){
+      var url=safeLink(x.url);
+      var row=url
+        ? h("a",{class:"item",href:url,target:"_blank",rel:"noopener"})
+        : h("div",{class:"item",style:"cursor:default"});
+      row.append(
+        h("span",{class:"dot num",text:x.kind==="video"?"▶":x.kind==="doc"?"▤":x.kind==="note"?"✎":"🔗"}),
+        h("span",{class:"it-body"},
+          h("span",{class:"it-title",text:x.title}),
+          h("span",{class:"it-sub",text:(x.note||(url?"Opens in a new tab":""))+(x.track&&x.track!=="All"?" · "+x.track:"")})),
+        url?h("span",{class:"chev",text:"↗"}):null);
+      mw.append(row);
+    });
+  }
+  app.append(mw);
+}
+
+function liveCard(){
+  var link=safeLink(cfgc&&cfgc.link), when=cfgc&&cfgc.next, note=cfgc&&cfgc.note;
+  var c=h("div",{class:"card hero rise",style:"margin-top:16px"});
+  c.append(h("div",{class:"card-title"},
+    h("span",{class:"pill ok"},h("span",{class:"dot-live"}),"Live class")));
+  c.append(h("h1",{style:"font-size:20px",text:when||"No class scheduled yet"}));
+  if(link){
+    c.append(h("button",{class:"btn gold block lg",style:"margin-top:14px",
+      onclick:function(){window.open(link,"_blank","noopener")}},
+      "Join on "+platformOf(link),h("span",{text:"↗"})));
+    c.append(h("p",{class:"faint",style:"margin:8px 0 0;font-size:12.5px",
+      text:"Opens in your browser or the app. Join a few minutes early."}));
+  } else {
+    c.append(h("p",{class:"lead",style:"margin:6px 0 0",
+      text:"Your trainer will post the joining link here before the next session."}));
+  }
+  if(note) c.append(h("div",{class:"callout",style:"margin-top:12px"},h("div",null,h("b",{text:"Announcement "}),note)));
+  return c;
+}
+
+/* ---------- one assignment ---------- */
+function openAssignment(aid){
+  var a=null;
+  asgs.forEach(function(x){if(x.id===aid)a=x});
+  if(!a){tab="class";home();return}
+  view="asg:"+aid;app.replaceChildren();showTabs(false);window.scrollTo(0,0);
+
+  var st=asgState(a), due=dueInfo(a), m=marks[aid], sb=subs[aid];
+
+  var head=h("div",{class:"card rise",style:"margin-top:16px"});
+  head.append(h("div",{class:"spread",style:"margin-bottom:8px"},
+    h("div",{class:"eyebrow",text:"Assignment"+(a.track&&a.track!=="All"?" · "+a.track:"")}),
+    h("span",{class:"pill "+st.tone,text:st.label})));
+  head.append(h("h1",{text:a.title}));
+  head.append(h("div",{class:"row row-tight",style:"margin-top:10px"},
+    h("span",{class:"pill"+(due.tone?" "+due.tone:""),text:"⏱ "+due.label}),
+    a.points?h("span",{class:"pill",text:a.points+" marks"}):null));
+  if(a.brief) head.append(h("div",{class:"prose",style:"margin-top:14px"},h("p",{text:a.brief})));
+  app.append(head);
+
+  /* the mark, once it exists */
+  if(m){
+    var pointsT=m.points||100, p=Math.round(m.score/pointsT*100), g=m.grade||gradeOf(p);
+    var mc=h("div",{class:"card rise rise-1"});
+    mc.append(h("div",{class:"card-title"},h("h2",{text:"Your mark"}),
+      h("span",{class:"pill "+gradeTone(g),text:g})));
+    mc.append(h("div",{class:"row",style:"align-items:center;gap:16px;margin-top:4px"},
+      ring(p,78,m.score+"/"+pointsT,"Score",true)));
+    if(m.feedback) mc.append(h("div",{class:"callout",style:"margin-top:12px"},
+      h("div",null,h("b",{text:"Trainer feedback "}),m.feedback)));
+    if(m.markedAt) mc.append(h("p",{class:"faint",style:"margin:10px 0 0;font-size:12.5px",
+      text:"Marked "+new Date(m.markedAt).toLocaleDateString(undefined,{day:"numeric",month:"short"})}));
+    app.append(mc);
+  }
+
+  /* hand-in form */
+  var card=h("div",{class:"card rise rise-2"});
+  card.append(h("div",{class:"card-title"},h("h2",{text:m?"What you handed in":"Hand in your work"})));
+  if(!m){
+    card.append(h("p",{class:"mute",style:"margin:0 0 12px",
+      text:"Paste a link to your work — your GitHub Pages site, a repository, Google Drive or CodePen. Nothing is uploaded, so this works on a slow connection."}));
+  }
+  var linkIn=h("input",{type:"url",id:"asg-link",placeholder:"https://yourname.github.io/project",
+    value:(sb&&sb.link)||"",disabled:!!m});
+  var noteIn=h("input",{type:"text",id:"asg-note",placeholder:"Anything your trainer should know (optional)",
+    maxlength:300,value:(sb&&sb.note)||"",disabled:!!m});
+  var err=h("div",{class:"err"});
+  card.append(h("div",{class:"field"},h("label",{class:"lbl",for:"asg-link",text:"Link to your work"}),linkIn));
+  card.append(h("div",{class:"field"},h("label",{class:"lbl",for:"asg-note",text:"Note"}),noteIn));
+  card.append(err);
+
+  if(!m){
+    var send=h("button",{class:"btn gold block lg",style:"margin-top:4px"},
+      sb?"Update my hand-in":"Hand in");
+    send.onclick=function(){
+      var l=linkIn.value.trim();
+      if(l.indexOf("https://")!==0){err.textContent="The link must start with https://";linkIn.focus();return}
+      err.textContent="";
+      submitWork(aid,l,noteIn.value.trim());
+      toast(navigator.onLine?"Handed in":"Saved on this phone. It will send when you are online.","ok");
+      openAssignment(aid);
+    };
+    card.append(send);
+  }
+  if(sb){
+    card.append(h("p",{class:"faint",style:"margin:10px 0 0;font-size:12.5px",
+      text:(sb.pending?"Waiting to send · saved ":"Handed in ")+
+        new Date(sb.submittedAt).toLocaleString(undefined,{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}));
+  }
+  app.append(card);
+
+  app.append(h("button",{class:"btn quiet block",style:"margin-top:10px",
+    onclick:function(){tab="class";home()}},"Back to class"));
+  land("Assignment: "+a.title);
+}
+
 function profileCard(){
   if(!validProfile()) return null;
   var lessonsPct=pct();

@@ -50,7 +50,8 @@ signed up for is simply the default.
 Everything still works offline. Progress, profile and quiz results save on the phone first and sync when online.
 
 TEACHER FLOW
-admin.html: class settings (next class text, Zoom/Meet link, announcement), learner table with search, quiz results with filter, CSV export of results and learners.
+admin.html: class settings (next class text, Zoom/Meet link, announcement), learner table with search,
+quiz results with filter, CSV export of results and learners, study materials, and assignments with marking.
 
 STEP 1: REPLACE FIRESTORE RULES (Firebase console > Firestore Database > Rules > Publish)
 
@@ -93,6 +94,50 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow write: if isAdmin();
     }
+
+    // ---- study materials: you post, every signed-in learner reads ----
+    match /materials/{id} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // ---- assignments: you set them, every signed-in learner reads ----
+    match /assignments/{id} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // ---- hand-ins: the learner owns the document, you can only read it ----
+    // Document ID is always <assignmentId>__<uid>, so one learner cannot
+    // create a second hand-in for the same assignment.
+    match /submissions/{id} {
+      allow read: if request.auth != null
+                  && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create, update: if request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && id == request.resource.data.assignment + '__' + request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid','assignment','link','note','submittedAt'])
+        && request.resource.data.link is string
+        && request.resource.data.link.size() <= 500
+        && request.resource.data.link.matches('https://.*')
+        && request.resource.data.note is string
+        && request.resource.data.note.size() <= 300;
+      allow delete: if false;
+    }
+
+    // ---- marks: you own the document, the learner can only read their own ----
+    // Kept separate from the hand-in so a learner can never write their own
+    // score, and you can never overwrite their work.
+    match /marks/{id} {
+      allow read: if request.auth != null
+                  && (resource.data.uid == request.auth.uid || isAdmin());
+      allow write: if isAdmin()
+        && request.resource.data.score is number
+        && request.resource.data.points is number
+        && request.resource.data.score >= 0
+        && request.resource.data.score <= request.resource.data.points;
+      allow delete: if false;
+    }
   }
 }
 
@@ -114,8 +159,19 @@ STEP 2: MAKE YOURSELF ADMIN (once)
 
 STEP 3: UPLOAD all files to GitHub (replace old ones):
 index.html, join.html, admin.html, styles.css, sw.js, manifest.json, icon-192.png,
-icon-512.png, README.txt (optional). styles.css is NEW - the pages are unstyled without it.
-sw.js is now v11 and caches styles.css too.
+icon-512.png, README.txt (optional). sw.js is now v14.
+The tests/ folder and masterclass-backlog.txt are for you, not for learners. Uploading
+them is harmless - GitHub Pages ignores them and the service worker never caches them -
+but they are not needed on the live site.
+
+IMPORTANT FOR THIS VERSION: the Firestore rules in STEP 1 have CHANGED. Materials,
+assignments and marking will not work until you publish them. Until you do, the teacher
+console still opens and tells you exactly what is missing.
+
+CHECKING BEFORE YOU UPLOAD (optional)
+There is a test kit in tests/ that opens all three pages against a fake Firebase and
+checks a couple of hundred things in about thirty seconds. See tests/README.txt. It
+never touches your real project.
 
 STEP 4: REVIEW CHECKLIST
 [ ] Open twice online, then airplane mode: still opens, badge "saved for offline"
@@ -133,6 +189,12 @@ STEP 4: REVIEW CHECKLIST
 [ ] Two different accounts on one phone: second account does not see the first one's progress
 [ ] admin.html: learner search, results filter, both CSV exports open in Excel
 [ ] A normal learner cannot open admin.html data ("not an admin")
+[ ] Teacher console > Materials: share a link, then confirm it appears on a learner's Class tab
+[ ] Teacher console > Assignments: set one, hand in from a learner account, mark it,
+    then confirm the learner sees the score and the feedback
+[ ] Turn the phone's network off, hand in an assignment, confirm it says "Saved on phone",
+    turn the network back on and confirm it sends by itself
+[ ] A learner cannot mark their own work (the marks collection is admin-write only)
 [ ] The small "Teacher" tab on join.html opens the console, and "Back to the
     classroom" on the login card returns a learner who tapped it by mistake
 [ ] Dark mode and a small screen look right
@@ -160,6 +222,45 @@ NOTES
 - The admin console scores each learner against the track they have actually progressed furthest
   in, and shows a per-track breakdown in the learner sheet when they have worked on both.
 - Learners store name, phone, goal and progress. Keep the consent line and only use the data for the training.
-- To update later change v13 to v14 in sw.js and upload again. Do this every time you edit
+- To update later change v14 to v15 in sw.js and upload again. Do this every time you edit
   index.html, join.html, admin.html or styles.css, otherwise phones keep the old cached copy.
-- Not built yet: certificates, audio/video downloads, assignments, attendance QR.
+- Not built yet: certificates, audio/video downloads, attendance QR.
+
+THE CLASS TAB: LIVE SESSIONS, MATERIALS AND ASSIGNMENTS
+Learners now have a fourth tab, Class, holding three things:
+  1. The live class card - whatever you set in Class settings. The button names the
+     platform it detects from the link (Google Meet, Zoom, or a live stream).
+  2. Study materials - anything you share from the Materials view: slides, a Drive
+     folder, a YouTube lesson, past papers. You can aim each item at everyone or at
+     one track. The list is cached on the phone, so it still opens with no network.
+  3. Assignments - what you set in the Assignments view, each showing To do, Handed
+     in, or the mark once you have marked it.
+
+HOW HANDING IN WORKS (no file uploads, on purpose)
+A learner hands in a LINK plus a short note: their GitHub Pages site, a repository,
+a Drive file, a CodePen. Nothing is uploaded.
+  - It costs nothing. Firebase Storage is not used, so there is no per-GB bill.
+  - It works on a weak network, where a file upload would fail and lose the work.
+  - It is what the course already teaches: push to GitHub, share the live link
+    (lesson B4, and M5 in the Masterclass).
+If the phone is offline the hand-in is saved on the device and marked "Saved on
+phone", then sent automatically the next time there is signal - the same outbox the
+quiz results already use. An unsent hand-in is never overwritten by a refresh.
+
+HOW MARKING WORKS
+Teacher console > Assignments > tap an assignment. You get every hand-in, with a
+button to open their work in a new tab, their note, a mark out of the total you set,
+and a feedback box. The grade letter is the same A1-F9 scale as the quizzes. The
+learner sees the score, the grade and your feedback on the assignment the next time
+their app syncs.
+The mark lives in a separate "marks" document from the hand-in. That is deliberate:
+a learner can never write their own score, and you can never overwrite their work.
+
+LIVE STREAMING LATER
+Google Meet and Zoom work today: paste the link in Class settings and the Class tab
+shows a Join button naming the platform. When you move to streaming, nothing in the
+data model has to change - a YouTube Live or similar https:// link in the same field
+already shows as "Join the live stream". The next step after that would be embedding
+the player in the Class tab instead of opening a new tab, which is a change to
+liveCard() in index.html only. Do not embed before you need it: an embedded player
+loads megabytes on a page that currently costs kilobytes.

@@ -172,6 +172,13 @@ const pctOf = (a, b) => b ? Math.round(a / b * 100) : 0;
 const fmtDate = d => d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
 const fmtWhen = d => d.toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 function gradeTone(g){ return /^[AB]/.test(g) ? "ok" : /^[C]/.test(g) ? "info" : /^[DE]/.test(g) ? "gold" : "bad"; }
+/* Hand-ins waiting for a mark. Shown as a badge on the Assignments nav item. */
+function toMark(){
+  const subs = (DATA && DATA.submissions) || [], marks = (DATA && DATA.marks) || {};
+  return subs.filter(s => !marks[s.id]).length;
+}
+/* Same scale the learner app uses for quizzes, so a mark reads the same way. */
+function gradeOf(p){ return p>=75?"A1":p>=70?"B2":p>=65?"B3":p>=60?"C4":p>=55?"C5":p>=50?"C6":p>=45?"D7":p>=40?"E8":"F9"; }
 
 /* ---------- state ---------- */
 let A, Au, F, auth, db;
@@ -268,17 +275,27 @@ async function load(){
       ["results",  F.getDocs(F.query(F.collection(db, "results"), F.orderBy("takenAt", "desc"), F.limit(500)))],
       ["users",    all("users")],
       ["learners", all("learners")],
-      ["config",   F.getDoc(F.doc(db, "config", "classroom"))]
+      ["config",   F.getDoc(F.doc(db, "config", "classroom"))],
+      ["materials",   all("materials")],
+      ["assignments", all("assignments")],
+      ["submissions", all("submissions")],
+      ["marks",       all("marks")]
     ];
+    /* The classroom collections are new. If the rules have not been updated yet
+       the console must still open, so these four are allowed to fail softly. */
+    const OPTIONAL = new Set(["materials", "assignments", "submissions", "marks"]);
     const out = await Promise.allSettled(jobs.map(j => j[1]));
-    const bad = out.map((o, i) => o.status === "rejected" ? [jobs[i][0], o.reason] : null).filter(Boolean);
+    const bad = out.map((o, i) => o.status === "rejected" && !OPTIONAL.has(jobs[i][0]) ? [jobs[i][0], o.reason] : null).filter(Boolean);
+    const missing = out.map((o, i) => o.status === "rejected" && OPTIONAL.has(jobs[i][0]) ? jobs[i][0] : null).filter(Boolean);
     if (bad.length){
       const e = new Error("load");
       e.code = bad.every(b => b[1] && b[1].code === "permission-denied") ? "permission-denied" : "other";
       e.bad = bad.map(b => b[0]);
       throw e;
     }
-    const [rs, us, ls, cf] = out.map(o => o.value);
+    const [rs, us, ls, cf, ms, asg, sb, mk] = out.map(o => o.value);
+    const rows = snap => { const a = []; if (snap) snap.forEach(d => { const x = d.data(); x.id = d.id; a.push(x); }); return a; };
+    const byCreated = (a, b) => (b.createdAt || 0) - (a.createdAt || 0);
 
     const people = {};
     us.forEach(d => { const x = d.data(); people[d.id] = { uid: d.id, email: x.email || "", lessons: (x.done || []).length, doneList: x.done || [] }; });
@@ -288,7 +305,15 @@ async function load(){
     rs.forEach(d => { const x = d.data();
       results.push({ uid: x.uid, quiz: x.quiz, score: x.score, total: x.total, pct: x.pct, grade: x.grade, at: new Date(x.takenAt) }); });
 
-    DATA = { people, results, config: cf.exists() ? cf.data() : {} };
+    const marksById = {};
+    rows(mk).forEach(m => { marksById[m.id] = m; });
+
+    DATA = { people, results, config: cf.exists() ? cf.data() : {},
+      materials: rows(ms).sort(byCreated),
+      assignments: rows(asg).sort(byCreated),
+      submissions: rows(sb),
+      marks: marksById,
+      missing };
     paint();
   } catch (e) { errorView(e); }
 }
@@ -350,6 +375,8 @@ function paint(){
     overview: ["◈", "Overview", ""],
     learners: ["◎", "Learners", String(ids.length)],
     results:  ["◇", "Results",  String(results.length)],
+    materials: ["▤", "Materials", String((DATA.materials || []).length)],
+    assignments: ["✎", "Assignments", String(toMark())],
     settings: ["✦", "Class settings", ""]
   };
   const side = h("nav", { class: "side" });
@@ -359,10 +386,13 @@ function paint(){
   });
 
   const body = h("main", { class: "fade" });
-  if (nav === "overview") body.append(...overviewView());
-  if (nav === "learners") body.append(...learnersView());
-  if (nav === "results")  body.append(...resultsView());
-  if (nav === "settings") body.append(...settingsView());
+  const show = parts => body.append(...parts.filter(Boolean));
+  if (nav === "overview") show(overviewView());
+  if (nav === "learners") show(learnersView());
+  if (nav === "results")  show(resultsView());
+  if (nav === "materials") show(materialsView());
+  if (nav === "assignments") show(assignmentsView());
+  if (nav === "settings") show(settingsView());
   document.title = views[nav][1] + " · Teacher Console";
 
   root.replaceChildren(h("div", { class: "wrap wrap-wide console" },
@@ -410,6 +440,13 @@ function overviewView(){
     h("div", { class: "eyebrow", text: "Today · " + new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" }) }),
     h("h1", { text: "How the class is doing" }),
     h("p", { class: "mute", text: "Live from Firebase. Last 500 quiz attempts." }));
+
+  const needsRules = (DATA.missing || []).length
+    ? h("div", { class: "callout warn rise" }, h("div", null,
+        h("b", { text: "Materials and assignments are not switched on yet. " }),
+        "Firestore is refusing to read " + DATA.missing.join(", ") + ". Open the Firebase console, "
+        + "replace your rules with the block in README.txt (STEP 1), publish, then refresh this page."))
+    : null;
 
   const kpis = h("section", { class: "grid g4 rise" },
     kpi(ids.length, "Learners enrolled", (active7 + " active this week"), ""),
@@ -494,7 +531,7 @@ function overviewView(){
       : h("div", { class: "empty" }, h("div", { class: "em", text: "✦" }), h("b", { text: "Nothing scheduled" }),
           h("div", { class: "mute", text: "Add the next class so every dashboard shows it." })));
 
-  return [head, kpis, h("div", { class: "grid", style: "margin-top:16px" }, chartCard, activityCard,
+  return [head, needsRules, kpis, h("div", { class: "grid", style: "margin-top:16px" }, chartCard, activityCard,
     h("div", { class: "grid g2", style: "align-items:start" }, leaderCard, nextCard))];
 }
 
@@ -776,6 +813,268 @@ function resultsView(){
 /* =====================================================================
    VIEW · CLASS SETTINGS
    ===================================================================== */
+/* =====================================================================
+   VIEW · STUDY MATERIALS
+   ===================================================================== */
+function materialsView(){
+  const list = DATA.materials || [];
+
+  const head = h("header", { class: "view-head" },
+    h("div", { class: "eyebrow", text: "Share with the class" }),
+    h("h1", { text: "Study materials" }),
+    h("p", { class: "mute", text: "Links to notes, slides, videos and past papers. Learners see these in the Class tab, and the list is cached on their phone so it still opens offline." }));
+
+  const title = h("input", { type: "text", placeholder: "Week 3 slides: CSS layout", maxlength: 120 });
+  const url   = h("input", { type: "url",  placeholder: "https://drive.google.com/..." });
+  const note  = h("input", { type: "text", placeholder: "What it is and why they need it (optional)", maxlength: 200 });
+  const kind  = h("select", null,
+    ...[["link","Link"],["doc","Document or slides"],["video","Video"],["note","Note only"]]
+      .map(([v,l]) => h("option", { value: v }, l)));
+  const track = h("select", null,
+    ...[["All","Everyone"],["Beginner","Beginner only"],["Masterclass","Masterclass only"]]
+      .map(([v,l]) => h("option", { value: v }, l)));
+  const err = h("div", { class: "err" });
+  const post = h("button", { class: "btn lg" }, "Share with learners");
+  let editing = null;
+
+  function reset(){
+    editing = null; title.value = ""; url.value = ""; note.value = "";
+    kind.value = "link"; track.value = "All";
+    post.textContent = "Share with learners"; err.textContent = "";
+  }
+
+  post.onclick = async () => {
+    const t = title.value.trim(), u = url.value.trim();
+    if (t.length < 3){ err.textContent = "Give it a title learners will recognise."; title.focus(); return; }
+    if (kind.value !== "note" && !u.startsWith("https://")){
+      err.textContent = "The link must start with https://"; url.focus(); return; }
+    post.disabled = true; post.textContent = "Sharing..."; err.textContent = "";
+    const id = editing || ("m" + Date.now().toString(36));
+    try {
+      await F.setDoc(F.doc(db, "materials", id), {
+        title: t, kind: kind.value, url: u, note: note.value.trim(),
+        track: track.value, createdAt: editing ? (list.find(x => x.id === id)?.createdAt || Date.now()) : Date.now(),
+        updatedAt: Date.now()
+      });
+      toast(editing ? "Material updated" : "Shared with the class", "ok");
+      reset(); await load();
+    } catch (e) {
+      err.textContent = e.code === "permission-denied"
+        ? "Your account is not in the admins collection, or the rules have not been updated yet."
+        : "Could not save. Check your connection and try again.";
+      post.disabled = false; post.textContent = "Share with learners";
+    }
+  };
+
+  const form = h("div", { class: "card rise" },
+    h("div", { class: "card-title" }, h("h2", { text: "Share something new" })),
+    h("div", { class: "field" }, h("label", { class: "lbl" }, "Title"), title),
+    h("div", { class: "grid g2" },
+      h("div", { class: "field" }, h("label", { class: "lbl" }, "Type"), kind),
+      h("div", { class: "field" }, h("label", { class: "lbl" }, "Who sees it"), track)),
+    h("div", { class: "field" }, h("label", { class: "lbl" }, "Link"), url,
+      h("div", { class: "hint", text: "Google Drive, YouTube, a PDF, your GitHub Pages notes - anything with an https:// address." })),
+    h("div", { class: "field" }, h("label", { class: "lbl" }, "Note"), note),
+    err, post);
+
+  const shared = h("div", { class: "card rise rise-1" },
+    h("div", { class: "card-title" }, h("h2", { text: "Already shared" }),
+      h("span", { class: "pill ghost", text: list.length + " item" + (list.length === 1 ? "" : "s") })));
+  if (!list.length){
+    shared.append(h("p", { class: "mute", text: "Nothing shared yet. Whatever you post appears on every learner's Class tab." }));
+  } else {
+    list.forEach(x => {
+      shared.append(h("div", { class: "item", style: "cursor:default" },
+        h("span", { class: "dot num", text: x.kind === "video" ? "▶" : x.kind === "doc" ? "▤" : x.kind === "note" ? "✎" : "🔗" }),
+        h("span", { class: "it-body" },
+          h("span", { class: "it-title", text: x.title }),
+          h("span", { class: "it-sub", text: (x.track === "All" ? "Everyone" : x.track) + (x.note ? " · " + x.note : "") })),
+        h("button", { class: "btn quiet sm", onclick: () => {
+          editing = x.id; title.value = x.title || ""; url.value = x.url || "";
+          note.value = x.note || ""; kind.value = x.kind || "link"; track.value = x.track || "All";
+          post.textContent = "Save changes"; title.scrollIntoView({ block: "center" }); title.focus();
+        } }, "Edit")));
+    });
+  }
+
+  return [head, form, shared];
+}
+
+/* =====================================================================
+   VIEW · ASSIGNMENTS AND MARKING
+   ===================================================================== */
+function assignmentsView(){
+  const { people } = DATA;
+  const list = DATA.assignments || [];
+  const subs = DATA.submissions || [];
+  const marks = DATA.marks || {};
+
+  const unmarked = subs.filter(s => !marks[s.id]).length;
+
+  const head = h("header", { class: "view-head" },
+    h("div", { class: "eyebrow", text: "Set work and mark it" }),
+    h("h1", { text: "Assignments" }),
+    h("p", { class: "mute", text: unmarked
+      ? unmarked + " hand-in" + (unmarked === 1 ? "" : "s") + " waiting to be marked."
+      : "Everything handed in has been marked." }));
+
+  const title  = h("input", { type: "text", placeholder: "Build a school landing page", maxlength: 120 });
+  const brief  = h("textarea", { rows: 4, placeholder: "What they must build, and what counts as done.", maxlength: 1200 });
+  const due    = h("input", { type: "date" });
+  const points = h("input", { type: "number", min: "1", max: "100", value: "100" });
+  const track  = h("select", null,
+    ...[["All","Everyone"],["Beginner","Beginner only"],["Masterclass","Masterclass only"]]
+      .map(([v,l]) => h("option", { value: v }, l)));
+  const err = h("div", { class: "err" });
+  const post = h("button", { class: "btn lg" }, "Set this assignment");
+  let editing = null;
+
+  post.onclick = async () => {
+    const t = title.value.trim();
+    if (t.length < 3){ err.textContent = "Give the assignment a clear title."; title.focus(); return; }
+    const pts = Math.max(1, Math.min(100, Number(points.value) || 100));
+    post.disabled = true; post.textContent = "Saving..."; err.textContent = "";
+    const id = editing || ("a" + Date.now().toString(36));
+    try {
+      await F.setDoc(F.doc(db, "assignments", id), {
+        title: t, brief: brief.value.trim(), track: track.value, points: pts,
+        dueAt: due.value ? new Date(due.value + "T23:59:59").getTime() : 0,
+        createdAt: editing ? (list.find(x => x.id === id)?.createdAt || Date.now()) : Date.now(),
+        updatedAt: Date.now()
+      });
+      toast(editing ? "Assignment updated" : "Assignment set", "ok");
+      editing = null; title.value = ""; brief.value = ""; due.value = ""; points.value = "100";
+      post.textContent = "Set this assignment"; await load();
+    } catch (e) {
+      err.textContent = e.code === "permission-denied"
+        ? "Your account is not in the admins collection, or the rules have not been updated yet."
+        : "Could not save. Check your connection and try again.";
+      post.disabled = false; post.textContent = "Set this assignment";
+    }
+  };
+
+  const form = h("div", { class: "card rise" },
+    h("div", { class: "card-title" }, h("h2", { text: "New assignment" })),
+    h("div", { class: "field" }, h("label", { class: "lbl" }, "Title"), title),
+    h("div", { class: "field" }, h("label", { class: "lbl" }, "Brief"), brief),
+    h("div", { class: "grid g3" },
+      h("div", { class: "field" }, h("label", { class: "lbl" }, "Due date"), due),
+      h("div", { class: "field" }, h("label", { class: "lbl" }, "Marks"), points),
+      h("div", { class: "field" }, h("label", { class: "lbl" }, "Who gets it"), track)),
+    err, post);
+
+  const setList = h("div", { class: "card rise rise-1" },
+    h("div", { class: "card-title" }, h("h2", { text: "Set so far" }),
+      h("span", { class: "pill ghost", text: list.length + " assignment" + (list.length === 1 ? "" : "s") })));
+  if (!list.length){
+    setList.append(h("p", { class: "mute", text: "No assignments yet. Learners see these in their Class tab and hand in a link to their work." }));
+  } else {
+    list.forEach(a => {
+      const mine = subs.filter(s => s.assignment === a.id);
+      const done = mine.filter(s => marks[s.id]).length;
+      setList.append(h("button", { class: "item", onclick: () => openAssignment(a.id) },
+        h("span", { class: "dot num", text: "✎" }),
+        h("span", { class: "it-body" },
+          h("span", { class: "it-title", text: a.title }),
+          h("span", { class: "it-sub", text: (a.track === "All" ? "Everyone" : a.track)
+            + (a.dueAt ? " · due " + new Date(a.dueAt).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "")
+            + " · " + mine.length + " handed in" })),
+        h("span", { class: "pill " + (mine.length && done === mine.length ? "ok" : mine.length ? "gold" : "") ,
+          text: mine.length ? done + "/" + mine.length + " marked" : "none yet" })));
+    });
+  }
+
+  return [head, form, setList];
+}
+
+/* ---------- mark one assignment ---------- */
+function openAssignment(aid){
+  const a = (DATA.assignments || []).find(x => x.id === aid);
+  if (!a) return;
+  const { people } = DATA;
+  const mine = (DATA.submissions || []).filter(s => s.assignment === aid)
+    .sort((x, y) => (y.submittedAt || 0) - (x.submittedAt || 0));
+  const marks = DATA.marks || {};
+
+  const close = () => back.remove();
+  const back = h("div", { class: "sheet-back", onclick: e => { if (e.target === back) close(); } });
+  const body = h("div", { class: "stack" });
+
+  function row(s){
+    const p = people[s.uid] || {};
+    const mk = marks[s.id];
+    const pts = a.points || 100;
+    const score = h("input", { type: "number", min: "0", max: String(pts),
+      value: mk ? String(mk.score) : "", placeholder: "0-" + pts, style: "max-width:110px" });
+    const fb = h("input", { type: "text", maxlength: 400, value: mk ? (mk.feedback || "") : "",
+      placeholder: "What they did well, what to fix" });
+    const msg = h("div", { class: "err" });
+    const btn = h("button", { class: "btn sm" }, mk ? "Update mark" : "Save mark");
+
+    btn.onclick = async () => {
+      const v = Number(score.value);
+      if (score.value === "" || isNaN(v) || v < 0 || v > pts){
+        msg.textContent = "Enter a mark between 0 and " + pts; score.focus(); return; }
+      btn.disabled = true; btn.textContent = "Saving..."; msg.textContent = "";
+      const p100 = Math.round(v / pts * 100);
+      try {
+        await F.setDoc(F.doc(db, "marks", s.id), {
+          uid: s.uid, assignment: aid, score: v, points: pts,
+          grade: gradeOf(p100), feedback: fb.value.trim(),
+          markedAt: Date.now(), markedBy: auth.currentUser ? auth.currentUser.uid : ""
+        });
+        toast("Mark saved", "ok"); close(); await load();
+      } catch (e) {
+        msg.textContent = e.code === "permission-denied"
+          ? "Marking needs the updated Firestore rules."
+          : "Could not save the mark. Try again.";
+        btn.disabled = false; btn.textContent = mk ? "Update mark" : "Save mark";
+      }
+    };
+
+    const link = String(s.link || "");
+    return h("div", { class: "card", style: "background:var(--softer)" },
+      h("div", { class: "spread", style: "gap:12px" },
+        h("div", { class: "row row-tight", style: "flex-wrap:nowrap;min-width:0" },
+          h("span", { class: "avatar", text: initials(p.name || p.email || "?") }),
+          h("div", { style: "min-width:0" },
+            h("div", { style: "font-weight:650", text: p.name || p.email || "Unknown learner" }),
+            h("div", { class: "mute", style: "font-size:12.5px",
+              text: s.submittedAt ? "Handed in " + new Date(s.submittedAt).toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "" }))),
+        mk ? h("span", { class: "pill ok", text: mk.score + "/" + pts }) : h("span", { class: "pill gold", text: "To mark" })),
+      link.startsWith("https://")
+        ? h("a", { class: "btn ghost sm", href: link, target: "_blank", rel: "noopener",
+            style: "margin-top:10px;display:inline-flex;max-width:100%;overflow:hidden" }, "Open their work ↗")
+        : h("div", { class: "mute", style: "margin-top:10px", text: "No link given" }),
+      s.note ? h("div", { class: "callout", style: "margin-top:10px" }, h("div", null, h("b", { text: "Their note " }), s.note)) : null,
+      h("div", { class: "grid g2", style: "margin-top:12px" },
+        h("div", { class: "field" }, h("label", { class: "lbl" }, "Mark out of " + pts), score),
+        h("div", { class: "field" }, h("label", { class: "lbl" }, "Feedback"), fb)),
+      msg, btn);
+  }
+
+  body.append(
+    h("div", { class: "spread", style: "margin-bottom:6px" },
+      h("div", null,
+        h("div", { class: "eyebrow", text: "Marking" }),
+        h("h2", { style: "font-size:19px", text: a.title })),
+      h("button", { class: "icon-btn", onclick: close, "aria-label": "Close" }, "✕")),
+    a.brief ? h("p", { class: "mute", text: a.brief }) : null);
+
+  if (!mine.length){
+    body.append(h("div", { class: "callout" }, h("div", null,
+      h("b", { text: "Nothing handed in yet. " }),
+      "Learners paste a link to their work from the Class tab.")));
+  } else {
+    mine.forEach(s => body.append(row(s)));
+  }
+
+  const sheet = h("div", { class: "sheet" }, body);
+  back.append(sheet);
+  document.body.append(back);
+  sheet.querySelector("h2").focus?.();
+}
+
 function settingsView(){
   const cfg = DATA.config || {};
   const next = h("input", { type: "text", placeholder: "Sat 10am · HTML & CSS live lab", value: cfg.next || "", maxlength: 120 });
