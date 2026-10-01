@@ -13,6 +13,12 @@ WHAT CHANGED IN V7 (interface only - the data model and Firestore rules are unch
   sortable and searchable learner table, a learner detail sheet with quiz history and
   a WhatsApp button, and a live preview of what learners will see before you publish.
 - Light / dark / follow-the-phone theme switch, remembered across all three pages.
+- Accessibility: skip-to-content links, focus moves to the new heading on every view
+  change (so keyboard and screen-reader users are not left behind), the browser tab
+  title follows the current view, progress rings and bars are real progressbars,
+  quiz options report their selected state, sortable admin columns report aria-sort,
+  and toasts are polite live regions. The ticking quiz timer is deliberately silent
+  for screen readers - announcing it every second would be unusable.
 - No web fonts and no frameworks were added: the pages still open on a weak network.
 
 JOIN PAGE (the link you share)
@@ -88,7 +94,10 @@ service cloud.firestore {
 }
 
 HOW TEACHERS REACH THE CONSOLE
-There is a small "Teacher" tab in the top-right corner of the banner on join.html.
+Two ways, both discreet:
+  1. A small "Teacher" tab in the top-right corner of the banner on join.html.
+  2. A "Teacher console" row at the bottom of the Me tab inside the learner app,
+     which is what you need once the app is installed and you no longer see join.html.
 It goes to admin.html. The console is still login-protected and the Firestore rules
 still decide who may read the data, so the tab being visible gives nothing away -
 a learner who taps it sees a login card with a "Back to the classroom" link.
@@ -103,7 +112,7 @@ STEP 2: MAKE YOURSELF ADMIN (once)
 STEP 3: UPLOAD all files to GitHub (replace old ones):
 index.html, join.html, admin.html, styles.css, sw.js, manifest.json, icon-192.png,
 icon-512.png, README.txt (optional). styles.css is NEW - the pages are unstyled without it.
-sw.js is now v10 and caches styles.css too.
+sw.js is now v11 and caches styles.css too.
 
 STEP 4: REVIEW CHECKLIST
 [ ] Open twice online, then airplane mode: still opens, badge "saved for offline"
@@ -134,6 +143,6 @@ NOTES
 - Firebase web config is public by design; the rules protect the data.
 - Masterclass learners see a "lessons being added" note. Only Beginner content exists.
 - Learners store name, phone, goal and progress. Keep the consent line and only use the data for the training.
-- To update later change v10 to v11 in sw.js and upload again. Do this every time you edit
+- To update later change v11 to v12 in sw.js and upload again. Do this every time you edit
   index.html, join.html, admin.html or styles.css, otherwise phones keep the old cached copy.
 - Not built yet: certificates, Masterclass lessons, audio/video downloads, assignments, attendance QR.

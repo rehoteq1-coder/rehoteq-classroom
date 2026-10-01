@@ -43,6 +43,7 @@
 </style>
 </head>
 <body>
+<a class="skip" href="#root">Skip to content</a>
 
 <div class="topbar" id="topbar">
   <div class="wrap wrap-wide inner">
@@ -57,8 +58,8 @@
   </div>
 </div>
 
-<div id="root"></div>
-<div class="toast-host" id="toasts"></div>
+<div id="root" tabindex="-1"></div>
+<div class="toast-host" id="toasts" role="status" aria-live="polite" aria-atomic="false"></div>
 
 <!-- shared gradient defs for rings and bars -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -150,6 +151,7 @@ function gradeTone(g){ return /^[AB]/.test(g) ? "ok" : /^[C]/.test(g) ? "info" :
 let A, Au, F, auth, db;
 let DATA = null;                 // { people, results, config }
 let nav = "overview";
+let painted = false;          // first paint should not steal focus
 let learnerSort = { key: "name", dir: 1 };
 let learnerQuery = "";
 let resultFilter = "All quizzes";
@@ -335,6 +337,7 @@ function paint(){
   if (nav === "learners") body.append(...learnersView());
   if (nav === "results")  body.append(...resultsView());
   if (nav === "settings") body.append(...settingsView());
+  document.title = views[nav][1] + " · Teacher Console";
 
   root.replaceChildren(h("div", { class: "wrap wrap-wide console" },
     h("aside", { class: "rail" },
@@ -346,6 +349,8 @@ function paint(){
           h("span", { class: "mute", style: "font-size:12px;overflow:hidden;text-overflow:ellipsis",
             text: auth.currentUser ? auth.currentUser.email : "" })))),
     body));
+  if (painted){ const hd = body.querySelector("h1"); if (hd){ hd.setAttribute("tabindex","-1"); try{ hd.focus({preventScroll:true}); }catch(e){} } }
+  painted = true;
 }
 
 /* ---------- shared derivations ---------- */
@@ -532,7 +537,8 @@ function learnersView(){
       lessons: pctOf(p.lessons, TOTAL_LESSONS), quizzes: (perLearner[id] || []).length, avg: avgFor(id) };
   });
 
-  const search = h("input", { type: "search", placeholder: "Search name, phone, email or goal", value: learnerQuery });
+  const search = h("input", { type: "search", placeholder: "Search name, phone, email or goal",
+    value: learnerQuery, "aria-label": "Search learners by name, phone, email or goal" });
   const exportBtn = h("button", { class: "btn ghost sm" }, "⇩ Export CSV");
   const tableHost = h("div");
 
@@ -566,7 +572,9 @@ function learnersView(){
     const thead = h("thead"), tr = h("tr");
     cols.forEach(([key, label]) => {
       const on = learnerSort.key === key;
-      tr.append(h("th", { class: "sortable", onclick: () => {
+      tr.append(h("th", { class: "sortable", scope: "col", role: "columnheader",
+        "aria-sort": on ? (learnerSort.dir > 0 ? "ascending" : "descending") : "none",
+        onclick: () => {
         learnerSort = { key, dir: on ? -learnerSort.dir : (typeof rows[0][key] === "number" ? -1 : 1) }; drawTable();
       } }, label, h("span", { class: "arrow", text: on ? (learnerSort.dir > 0 ? "▲" : "▼") : "↕" })));
     });
@@ -579,7 +587,9 @@ function learnersView(){
           h("span", null, r.name))),
         h("td", null, h("span", { class: "pill ghost", text: r.track })),
         h("td", { text: r.mode }),
-        h("td", null, h("span", { class: "mini-bar" }, h("i", { style: "width:" + r.lessons + "%" })),
+        h("td", null, h("span", { class: "mini-bar", role: "progressbar", "aria-valuenow": r.lessons,
+            "aria-valuemin": "0", "aria-valuemax": "100", "aria-label": "Lessons complete" },
+            h("i", { style: "width:" + r.lessons + "%" })),
           h("span", { class: "num", style: "margin-left:8px;font-weight:650", text: r.lessons + "%" })),
         h("td", { class: "num", text: String(r.quizzes) }),
         h("td", null, r.avg === null ? h("span", { class: "faint", text: "—" })
@@ -695,7 +705,7 @@ function resultsView(){
 
   const table = list.length
     ? h("div", { class: "tbl-wrap" }, h("table", null,
-        h("thead", null, h("tr", null, ...["Learner","Quiz","Score","Result","Grade","When"].map(t => h("th", { text: t })))),
+        h("thead", null, h("tr", null, ...["Learner","Quiz","Score","Result","Grade","When"].map(t => h("th", { text: t, scope: "col" })))),
         h("tbody", null, ...list.map(r => h("tr", { style: "cursor:pointer", onclick: () => openLearner(r.uid) },
           h("td", { class: "strong" }, h("span", { class: "cell-user" },
             h("span", { class: "avatar sm", text: initials(nameOf(r.uid)) }), h("span", null, nameOf(r.uid)))),

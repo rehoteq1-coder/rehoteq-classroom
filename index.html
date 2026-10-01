@@ -34,6 +34,7 @@
 </style>
 </head>
 <body>
+<a class="skip" href="#app">Skip to content</a>
 
 <div class="topbar" id="topbar">
   <div class="shell inner">
@@ -48,13 +49,13 @@
   </div>
 </div>
 
-<main id="app" class="shell"></main>
+<main id="app" class="shell" tabindex="-1"></main>
 
 <nav class="tabbar hide" id="tabbar" aria-label="Sections">
   <div class="shell inner" style="padding:0 8px"></div>
 </nav>
 
-<div class="toast-host" id="toasts"></div>
+<div class="toast-host" id="toasts" role="status" aria-live="polite" aria-atomic="false"></div>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
@@ -193,6 +194,15 @@ function avgq(){return results.length?Math.round(results.reduce(function(s,r){re
 function validProfile(){return !!(user&&profile&&profile.uid===user.uid)}
 function readMins(l){var w=(l.pts.join(" ")+l.lab.join(" ")).split(/\s+/).length;return Math.max(3,Math.round(w/95)+3)}
 function gradeTone(g){return /^[AB]/.test(g)?"ok":/^C/.test(g)?"info":/^[DE]/.test(g)?"gold":"bad"}
+/* Screen readers and keyboard users must land on the new view, not stay where
+   the old page was. Called after every view change except the first paint. */
+var booted=false;
+function land(title){
+  document.title=title?title+" · Rehoteq Classroom":"Rehoteq Classroom";
+  if(!booted){booted=true;return}
+  var hd=app.querySelector("h1")||app;
+  try{hd.setAttribute("tabindex","-1");hd.focus({preventScroll:true})}catch(e){}
+}
 
 /* ---------- progress ring ---------- */
 function ring(value,size,label,sub,gold){
@@ -204,7 +214,9 @@ function ring(value,size,label,sub,gold){
     stroke:gold?"url(#ringGold)":"url(#ringGrad)","stroke-dasharray":c,"stroke-dashoffset":c});
   g.append(v);
   requestAnimationFrame(function(){requestAnimationFrame(function(){v.setAttribute("stroke-dashoffset",off)})});
-  return h("div",{class:"ring-wrap",style:"width:"+size+"px;height:"+size+"px"},g,
+  return h("div",{class:"ring-wrap",style:"width:"+size+"px;height:"+size+"px",
+    role:"progressbar","aria-valuenow":Math.round(value),"aria-valuemin":"0","aria-valuemax":"100",
+    "aria-label":(sub||"Progress")+": "+Math.round(value)+" percent"},g,
     h("div",{class:"mid"},h("div",null,h("b",{text:label}),sub?h("span",{text:sub}):null)));
 }
 
@@ -334,7 +346,8 @@ function buildTabs(){
   var inner=tabbar.firstElementChild;
   inner.replaceChildren();
   TABS.forEach(function(t){
-    inner.append(h("button",{class:"tab"+(tab===t[0]?" on":""),onclick:function(){tab=t[0];home();window.scrollTo({top:0,behavior:"smooth"})}},
+    inner.append(h("button",{class:"tab"+(tab===t[0]?" on":""),"aria-current":tab===t[0]?"page":null,
+      onclick:function(){tab=t[0];home();window.scrollTo({top:0,behavior:"smooth"})}},
       h("span",{class:"ti",text:t[1]}),h("span",{text:t[2]})));
   });
 }
@@ -375,6 +388,7 @@ function home(){
   else { put(profileCard()); put(account()); put(aboutCard()); }
   app.append(h("p",{class:"faint center",style:"margin:22px 0 8px",
     text:"Everything saves on this device first. Built for weak networks."}));
+  land(tab==="learn"?"Lessons":tab==="quiz"?"Quizzes":"My account");
 }
 
 function heroCard(){
@@ -538,7 +552,8 @@ function openLesson(i){
     h("span",{class:"pill",text:"⏱ "+readMins(l)+" min"}),
     h("span",{class:"pill",text:l.lab.length+" lab steps"}),
     done.indexOf(i)>=0?h("span",{class:"pill ok",text:"✓ Completed"}):null));
-  head.append(h("div",{class:"segs",style:"margin-top:14px"},
+  head.append(h("div",{class:"segs",style:"margin-top:14px",role:"img",
+    "aria-label":"Course progress: "+done.length+" of "+LESSONS.length+" lessons complete"},
     LESSONS.map(function(_,j){return h("span",{class:done.indexOf(j)>=0?"on":(j===i?"cur":"")})})));
   app.append(head);
 
@@ -588,6 +603,7 @@ function openLesson(i){
     i<LESSONS.length-1?"Next →":"Finish");
   app.append(h("div",{class:"row",style:"margin-top:10px;flex-wrap:nowrap"},prev,next));
   app.append(h("button",{class:"btn quiet block",style:"margin-top:8px",onclick:function(){tab="learn";home()}},"All lessons"));
+  land("Lesson "+(i+1)+": "+l.t);
 }
 
 /* =====================================================================
@@ -623,8 +639,9 @@ function showQuiz(){
     h("div",{class:"spread"},
       h("div",null,h("div",{class:"eyebrow",text:Q.name}),
         h("div",{class:"mute",style:"font-weight:650",text:"Question "+(session.i+1)+" of "+n})),
-      h("span",{class:"timer",id:"tm",text:"⏱ --:--"})),
-    h("div",{class:"segs",style:"margin-top:10px"},
+      h("span",{class:"timer",id:"tm",role:"timer","aria-live":"off","aria-label":"Time remaining",text:"⏱ --:--"})),
+    h("div",{class:"segs",style:"margin-top:10px",role:"img",
+      "aria-label":"Answered "+answered+" of "+n+" questions"},
       session.order.map(function(o,j){
         return h("span",{class:j===session.i?"cur":(session.ans[o.q]!==undefined?"on":"")});
       })));
@@ -635,7 +652,7 @@ function showQuiz(){
   var keys="ABCDE";
   it.o.forEach(function(oi,pos){
     var on=session.ans[it.q]===oi;
-    c.append(h("button",{class:"opt"+(on?" on":""),onclick:function(){
+    c.append(h("button",{class:"opt"+(on?" on":""),"aria-pressed":on?"true":"false",onclick:function(){
       session.ans[it.q]=oi;set(SK,session);
       if(session.i<n-1){session.i++;set(SK,session)}
       showQuiz();
@@ -653,6 +670,7 @@ function showQuiz(){
   app.append(h("button",{class:"btn quiet block",style:"margin-top:8px",
     onclick:function(){clearInterval(tick);tab="quiz";home()}},"Leave (timer keeps running)"));
   runTimer();
+  land(Q.name+" quiz, question "+(session.i+1));
 }
 function confirmFinish(left){
   if(!left){finish();return}
@@ -703,6 +721,7 @@ function showResult(r){
   app.append(h("div",{class:"row",style:"margin-top:12px;flex-wrap:nowrap"},
     h("button",{class:"btn",style:"flex:1",onclick:function(){startQuiz(r.quiz)}},"Try again"),
     h("button",{class:"btn ghost",style:"flex:1",onclick:function(){tab="quiz";home()}},"All quizzes")));
+  land("Result: "+r.score+" of "+r.total);
   syncResults();
 }
 function confetti(){
@@ -730,7 +749,9 @@ function profileCard(){
     h("div",{style:"min-width:0;flex:1"},
       h("h2",{style:"font-size:18px",text:profile.name}),
       h("div",{class:"mute",text:profile.track+" track"}))));
-  c.append(h("div",{class:"bar",style:"margin:16px 0 6px"},h("i",{style:"width:"+lessonsPct+"%"})));
+  c.append(h("div",{class:"bar",style:"margin:16px 0 6px",role:"progressbar",
+    "aria-valuenow":lessonsPct,"aria-valuemin":"0","aria-valuemax":"100",
+    "aria-label":"Lessons complete: "+lessonsPct+" percent"},h("i",{style:"width:"+lessonsPct+"%"})));
   c.append(h("div",{class:"spread faint"},
     h("span",{text:done.length+" of "+LESSONS.length+" lessons"}),h("span",{text:lessonsPct+"%"})));
   var kv=[["Attending",profile.mode],["Device",profile.device],["Experience",profile.level],["Goal",profile.goal],["Phone",profile.phone]];
@@ -795,6 +816,10 @@ function aboutCard(){
   rows.append(h("div",{class:"item",style:"cursor:default"},
     h("span",{class:"it-body"},h("span",{class:"it-title",text:"Storage on this device"}),
       h("span",{class:"it-sub",text:results.length+" saved results · "+outbox.length+" waiting to upload"}))));
+  rows.append(h("a",{class:"item",href:"admin.html",style:"text-decoration:none"},
+    h("span",{class:"it-body"},h("span",{class:"it-title",text:"Teacher console"}),
+      h("span",{class:"it-sub",text:"Staff only · class settings and learner progress"})),
+    h("span",{class:"chev",text:"›"})));
   c.append(rows);
   c.append(h("p",{class:"faint",style:"margin-top:14px",
     text:"Rehoteq Technologies · Okitipupa, Ondo State. We keep your name, phone and progress only to run your training."}));
@@ -891,6 +916,7 @@ function showOnboarding(){
   }
   app.append(form);
   app.append(h("p",{class:"faint center",style:"margin-top:16px",text:"One minute. Then everything is yours."}));
+  land("Step "+(onboardStep+1)+" of "+STEPS.length);
 }
 
 /* =====================================================================
