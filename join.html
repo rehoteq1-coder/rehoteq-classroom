@@ -186,8 +186,8 @@ try {
 
 function adopt(uid){
   const prev = getL("rc-uid");
-  if (prev && prev !== uid)
-    ["rc-done","rc-done-t","rc-done-d","rc-results","rc-session","rc-profile","rc-prof-d","rc-lab","rc-out","rc-draft"]
+  if (prev !== uid)
+    ["rc-done","rc-done-t","rc-done-d","rc-results","rc-session","rc-profile","rc-prof-d","rc-lab","rc-out","rc-draft","rc-subs","rc-marks","rc-sub-out"]
       .forEach(k => localStorage.removeItem(k));
   put("rc-uid", uid);
 }

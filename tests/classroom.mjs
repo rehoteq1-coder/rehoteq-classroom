@@ -265,7 +265,8 @@ console.log("\n--- Firestore rules in README ---");
   ok("README explains the offline hand-in", /Saved on\s*\n?phone/i.test(r) || /Saved on phone/.test(r));
   ok("README has the streaming upgrade path", /LIVE STREAMING LATER/.test(r));
   ok("README has a test for marking", /mark it/.test(r));
-  ok("the service worker was bumped to v14", /rehoteq-classroom-v14/.test(sw));
+  const swv = +(/rehoteq-classroom-v(\d+)/.exec(sw) || [0, 0])[1];
+  ok("the service worker was bumped to v14 or later", swv >= 14);
 }
 
 console.log("\nclassroom: " + pass + " passed, " + fail + " failed");

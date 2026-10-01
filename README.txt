@@ -161,7 +161,7 @@ STEP 2: MAKE YOURSELF ADMIN (once)
 
 STEP 3: UPLOAD all files to GitHub (replace old ones):
 index.html, join.html, admin.html, styles.css, sw.js, manifest.json, icon-192.png,
-icon-512.png, README.txt (optional). sw.js is now v14.
+icon-512.png, README.txt (optional). sw.js is now v15.
 The tests/ folder and masterclass-backlog.txt are for you, not for learners. Uploading
 them is harmless - GitHub Pages ignores them and the service worker never caches them -
 but they are not needed on the live site.
@@ -224,7 +224,7 @@ NOTES
 - The admin console scores each learner against the track they have actually progressed furthest
   in, and shows a per-track breakdown in the learner sheet when they have worked on both.
 - Learners store name, phone, goal and progress. Keep the consent line and only use the data for the training.
-- To update later change v14 to v15 in sw.js and upload again. Do this every time you edit
+- To update later change v15 to v16 in sw.js and upload again. Do this every time you edit
   index.html, join.html, admin.html or styles.css, otherwise phones keep the old cached copy.
 - Not built yet: certificates, audio/video downloads, attendance QR.
 

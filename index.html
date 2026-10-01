@@ -332,9 +332,10 @@ function sync(){
   var slow=new Promise(function(_,r){setTimeout(function(){r(new Error("slow"))},15000)});
   Promise.race([fb.getDoc(ref),slow]).then(function(snap){
     var c=snap.exists()?snap.data():null;
-    if(c&&c.updatedAt>stamp){done=c.done||[];stamp=c.updatedAt;dirty=false;set(K,done);set(K+"-t",stamp);set(K+"-d",false);render()}
-    else if(dirty||!c){return Promise.race([fb.setDoc(ref,{done:done,updatedAt:stamp,email:user.email||""}),slow])
+    if(c&&c.updatedAt>stamp&&!dirty){done=c.done||[];stamp=c.updatedAt;dirty=false;set(K,done);set(K+"-t",stamp);set(K+"-d",false);render()}
+    else if(dirty){return Promise.race([fb.setDoc(ref,{done:done,updatedAt:stamp,email:user.email||""}),slow])
       .then(function(){dirty=false;set(K+"-d",false)})}
+    else if(c&&!dirty){done=c.done||[];stamp=c.updatedAt;set(K,done);set(K+"-t",stamp);render()}
   }).then(function(){say("All progress saved online")}).catch(function(){say("Saved on this phone. Will retry.")});
 }
 function syncResults(){
@@ -374,13 +375,14 @@ function boot(){
     m[1].onAuthStateChanged(au,function(u){
       if(u){
         var lu=get("rc-uid",null);
-        if(lu&&lu!==u.uid){
+        if(lu!==u.uid){
           done=[];stamp=0;dirty=false;set(K,[]);set(K+"-t",0);set(K+"-d",false);
           results=[];set(RK,[]);labs={};set(LABK,{});
           try{localStorage.removeItem("rc-draft")}catch(e){}
           profile=null;set("rc-profile",null);profDirty=false;set("rc-prof-d",false);
           session=null;try{localStorage.removeItem(SK)}catch(e){}
           subs={};marks={};subOut=[];set(SUBK,{});set(MRKK,{});set(SOK,[]);classLoaded=false;
+          outbox=[];set(OK,[]);
         }
         set("rc-uid",u.uid);
       }
@@ -1139,7 +1141,17 @@ function account(){
         h("div",{class:"mute",id:"sync",style:"font-size:12.5px",text:syncMsg||"Signed in"}))));
     c.append(h("div",{class:"row",style:"margin-top:14px"},
       h("button",{class:"btn ghost sm",onclick:function(){sync();toast("Syncing now")}},"Sync now"),
-      h("button",{class:"btn quiet sm",onclick:function(){fb.signOut(fb.auth)}},"Log out")));
+      h("button",{class:"btn quiet sm",onclick:function(){
+        done=[];stamp=0;dirty=false;set(K,[]);set(K+"-t",0);set(K+"-d",false);
+        results=[];set(RK,[]);labs={};set(LABK,{});
+        try{localStorage.removeItem("rc-draft")}catch(e){}
+        profile=null;set("rc-profile",null);profDirty=false;set("rc-prof-d",false);
+        session=null;try{localStorage.removeItem(SK)}catch(e){}
+        subs={};marks={};subOut=[];set(SUBK,{});set(MRKK,{});set(SOK,[]);classLoaded=false;
+        outbox=[];set(OK,[]);
+        try{localStorage.removeItem("rc-uid")}catch(e){}
+        fb.signOut(fb.auth);
+      }},"Log out")));
     return c;
   }
   c.append(h("p",{class:"mute",text:"Log in to save your progress online and continue on any phone."}));
