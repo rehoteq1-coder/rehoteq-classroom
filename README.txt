@@ -43,7 +43,10 @@ index.html still has the same three-step form as a safety net if someone signs u
 
 LEARNER FLOW
 Open link > three onboarding questions > create account > Personal dashboard.
-Dashboard: greeting, progress, lessons/quizzes/average, next live class + Join button, announcement, 13 lessons, 7 timed quizzes.
+Dashboard: greeting, progress, lessons/quizzes/average, next live class + Join button, announcement,
+and a track switcher. Beginner holds 13 lessons and 7 timed quizzes (B1-B7); Masterclass holds
+14 lessons and 7 timed quizzes (M1-M7). Every learner can read both tracks; the one they signed
+up for is simply the default.
 Everything still works offline. Progress, profile and quiz results save on the phone first and sync when online.
 
 TEACHER FLOW
@@ -141,8 +144,19 @@ STEP 4: REVIEW CHECKLIST
 NOTES
 - Quiz answers are inside the page (fine for practice, not for graded exams).
 - Firebase web config is public by design; the rules protect the data.
-- Masterclass learners see a "lessons being added" note. Only Beginner content exists.
+- Both tracks are live. Masterclass covers: M1 Modern JavaScript, M2 React fundamentals,
+  M3 APIs and the back end, M4 Data that scales, M5 Ship it, M6 Performance and quality,
+  M7 Earning from your skills.
+- HOW PROGRESS IS STORED (important before you edit the lessons). users/{uid}.done is one flat
+  array of GLOBAL lesson ids. Beginner lessons are 0-12, Masterclass lessons are 100-113. That is
+  why a learner can hold progress on both tracks in a single array with no change to the Firestore
+  rules. If you ADD a Beginner lesson, append it to B_LESSONS - never insert in the middle, or
+  everyone's saved ids shift and point at the wrong lesson. The same rule applies to M_LESSONS,
+  which must never grow past 13 entries unless you also raise Masterclass's total in admin.html
+  (TRACKS.Masterclass.total) and move the base of any future track above the new ceiling.
+- The admin console scores each learner against the track they have actually progressed furthest
+  in, and shows a per-track breakdown in the learner sheet when they have worked on both.
 - Learners store name, phone, goal and progress. Keep the consent line and only use the data for the training.
-- To update later change v11 to v12 in sw.js and upload again. Do this every time you edit
+- To update later change v12 to v13 in sw.js and upload again. Do this every time you edit
   index.html, join.html, admin.html or styles.css, otherwise phones keep the old cached copy.
-- Not built yet: certificates, Masterclass lessons, audio/video downloads, assignments, attendance QR.
+- Not built yet: certificates, audio/video downloads, assignments, attendance QR.

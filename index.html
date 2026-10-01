@@ -73,7 +73,7 @@
    ===================================================================== */
 
 /* ---------- content ---------- */
-var LESSONS=[
+var B_LESSONS=[
 {m:"B1 Digital foundations",t:"Inside the computer",pts:["CPU is the brain. RAM is short-term memory and is cleared when power goes off. Storage (HDD or SSD) keeps files long-term.","The operating system manages the hardware and runs your apps.","A computer feels slow when RAM is small, storage is almost full, too many apps start at boot, or malware is present."],lab:["Open Settings, About, and write down your processor, RAM and OS.","Open Task Manager (Ctrl + Shift + Esc) and look at Startup.","Disable two startup apps you do not need."]},
 {m:"B1 Digital foundations",t:"Files, folders and backup",pts:["Name files in lowercase with hyphens and put the date first when order matters, for example result-jss1-2026-09-28.xlsx.","3-2-1 backup: keep 3 copies, on 2 types of storage, with 1 copy away from your computer.","Shortcuts: Ctrl+C copy, Ctrl+V paste, Ctrl+Z undo, Ctrl+S save."],lab:["Create the folder Rehoteq-Academy with sub-folders for each module.","Copy it to a flash drive and to Google Drive.","Delete one file and restore it from your backup."]},
 {m:"B1 Digital foundations",t:"How websites work",pts:["Your browser asks DNS for the server address, then the server sends HTML, CSS, JavaScript and images.","HTTPS means the connection is encrypted. It does not prove a site is honest.","Big pages fail more often on weak networks, so we build small."],lab:["Open Chrome DevTools (F12) and the Network tab.","Reload a page and write the requests and total size.","Set throttling to Slow 3G and reload again."]},
@@ -89,7 +89,7 @@ var LESSONS=[
 {m:"B7 Cyber hygiene",t:"Stay safe online",pts:["Use long, unique passwords and turn on 2-step verification. Authenticator apps beat SMS.","Phishing uses pressure and fake links. Your bank never asks for your PIN or OTP.","Install apps only from the official store and review app permissions."],lab:["Audit 5 accounts and turn on 2FA for Google and GitHub.","Review 10 app permissions and restrict at least 3.","Draft a one-page data policy for a mock school."]}
 ];
 
-var QZ={
+var B_QZ={
 B1:{name:"B1 Digital foundations",secs:240,q:[
 {t:"Which part is the computer's short-term working memory?",o:["Storage","RAM","Power supply"],a:1,e:"RAM is fast temporary memory. It clears when the power goes off."},
 {t:"Which is usually faster, an HDD or an SSD?",o:["HDD","SSD"],a:1,e:"An SSD has no moving parts and is much faster."},
@@ -133,6 +133,85 @@ B7:{name:"B7 Cyber hygiene",secs:240,q:[
 {t:"What is least privilege?",o:["Each person gets only the access they need","Everyone shares one login"],a:0,e:"Less access means less damage when something goes wrong."},
 {t:"Where should you install apps from?",o:["The official store","Any link sent to you"],a:0,e:"Unknown APKs are a common way malware spreads."}]}};
 
+/* Masterclass lessons use global ids 100+ so one flat progress array on the
+   learner document can hold both tracks without a migration. */
+var M_LESSONS=[
+{m:"M1 Modern JavaScript",t:"ES6 features you will use daily",pts:["const and let replace var. Destructuring pulls values out in one line: const { name, score } = student.","Template literals build strings with backticks and placeholders. Arrow functions keep the surrounding value of this.","Optional chaining (user?.profile?.name) and nullish coalescing (value ?? fallback) prevent most undefined crashes."],lab:["Rewrite an old script of yours using const, let and arrow functions.","Replace three string concatenations with template literals.","Find one place that crashes on missing data and fix it with optional chaining."]},
+{m:"M1 Modern JavaScript",t:"Promises, async and await",pts:["A promise is a value that arrives later. async marks a function that returns one; await pauses until it settles.","Always wrap await in try and catch. A rejected promise with no catch fails silently and leaves the screen stuck.","Promise.all starts several calls together. Awaiting them one after another is much slower on a weak network."],lab:["Fetch a public API and show the result using async and await.","Add try and catch, and show a friendly message when the network fails.","Load two endpoints with Promise.all and compare the time against two separate awaits."]},
+{m:"M1 Modern JavaScript",t:"Modules, npm and tooling",pts:["export and import split code into files the browser can load directly with script type=module.","package.json records your dependencies. node_modules is generated and must stay in .gitignore.","A bundler such as Vite gives instant reloads while you build and one small file when you ship."],lab:["Split a single long script into three modules and import them.","Start a Vite project and run the dev server.","Build for production and write down the output file size."]},
+{m:"M2 React fundamentals",t:"Components, props and JSX",pts:["A component is a function that returns JSX. Name it with a capital letter or React treats it as an HTML tag.","Props pass data down and are read only. Never assign to a prop inside the child.","Every item in a rendered list needs a stable key. The array index is not stable once the list reorders."],lab:["Build a LessonCard component that takes a title and minutes as props.","Render eight of them from an array using proper keys.","Extract the badge inside the card into its own component."]},
+{m:"M2 React fundamentals",t:"State and effects",pts:["useState returns the value and a setter. Never change state directly; always call the setter.","State updates are batched. Use the function form of the setter when the next value depends on the old one.","useEffect runs after render. The dependency array decides when it runs again and the returned function cleans up."],lab:["Build a counter, then fix it so three rapid clicks always add three.","Load data inside useEffect and show a loading state while it arrives.","Add a cleanup that cancels the request if the component is removed first."]},
+{m:"M2 React fundamentals",t:"Forms, lists and lifting state",pts:["A controlled input keeps its value in state, so the component always knows what the user typed.","When two components need the same data, move that state up to their closest shared parent.","Derive what you can instead of storing it. A filtered list should be computed during render, not kept in state."],lab:["Build a student list with a controlled add form.","Add a search box and compute the filtered list during render.","Lift the selected student up so two panels stay in sync."]},
+{m:"M3 APIs and the back end",t:"HTTP and REST in practice",pts:["GET reads, POST creates, PUT and PATCH update, DELETE removes. Keep each method honest.","Status codes carry meaning: 200 fine, 201 created, 400 bad request, 401 not signed in, 403 not allowed, 404 missing, 500 server fault.","A CORS error comes from the server, not your code. The server must send the Access-Control-Allow-Origin header."],lab:["Call a public API with GET and with POST and read the status codes.","Cause a 404 and a 400 on purpose and handle both gracefully.","Reproduce a CORS error and write down exactly what the server would need to send."]},
+{m:"M3 APIs and the back end",t:"Serverless functions and secrets",pts:["Anything in front-end code is public. Keys that cost money or grant admin rights belong on a server.","A cloud function is a small piece of server code that runs on demand and costs nothing while nobody calls it.","Keep secrets in environment variables, never in the repository, and rotate any key that has leaked."],lab:["Write a cloud function that calls a paid API and returns only the result.","Move one key out of your front end into that function.","Add a .env file and confirm .gitignore excludes it."]},
+{m:"M4 Data that scales",t:"Modelling data for NoSQL",pts:["Design around the screens you will build, not around tidy tables. Store data the way you will read it.","Copying a learner name into a result document is normal in NoSQL. It saves a lookup on every single read.","Every query needs an index. Compound queries need a compound index, and Firestore tells you which one to create."],lab:["Sketch the documents needed for a results screen that shows the learner name.","Write a query that requires a compound index and create it.","Count the reads used by one dashboard load."]},
+{m:"M4 Data that scales",t:"Security rules in depth",pts:["Rules are not filters. A query that could return a document the user may not read is rejected outright.","Validate shape as well as access: check the keys, types and sizes of request.resource.data on every write.","Test rules in the emulator before publishing. Write a test that is supposed to fail and make sure it does."],lab:["Write rules so a learner can read only their own results.","Add validation that rejects a score higher than the total.","Run the emulator and prove an attacker cannot write someone else's document."]},
+{m:"M5 Ship it",t:"Git for teams",pts:["One branch per piece of work, opened as a pull request. Main stays deployable at all times.","A conflict is two edits to the same lines. Open the file, keep the right code, remove the markers, then commit.","Write commit messages that explain why. The diff already shows what changed."],lab:["Create a branch, make a change and open a pull request.","Cause a merge conflict on purpose and resolve it.","Review someone else's pull request and leave one useful comment."]},
+{m:"M5 Ship it",t:"Deploy and automate",pts:["Continuous integration runs your checks on every push, so broken code never reaches main.","A GitHub Actions workflow is a YAML file listing the jobs and steps that run on a trigger.","Always know how to roll back. A deploy you cannot undo is a deploy you should not make."],lab:["Add an Action that runs on every push and fails when there is an error.","Deploy automatically whenever main changes.","Roll a deployment back and time how long it takes."]},
+{m:"M6 Performance and quality",t:"Fast on a 3G phone",pts:["Measure before you optimise. Lighthouse and the Network tab show you where the time actually goes.","The biggest wins are usually images, then unused JavaScript, then blocking fonts.","Cache deliberately with a service worker, and change the cache version or phones keep serving the old files."],lab:["Run Lighthouse on your project and write down the three worst items.","Shrink the largest image and the largest script, then measure again.","Test the whole flow on throttled Slow 3G."]},
+{m:"M7 Earning from your skills",t:"Freelancing and client work",pts:["Agree the scope in writing before you start: what is included, what is not, and what a change costs.","Price the outcome rather than the hours, and take a deposit before the first line of code.","Hand over properly: the repository, the accounts, a short written guide, and a clear end to your responsibility."],lab:["Write a one page proposal for a real local business.","Build a portfolio page with three projects and the problem each one solved.","Draft your rate card and a simple contract you would actually send."]}
+];
+
+var M_QZ={
+M1:{name:"M1 Modern JavaScript",secs:300,q:[
+{t:"Which one keeps the surrounding value of this?",o:["Arrow function","Normal function expression"],a:0,e:"Arrow functions do not create their own this, so they keep the one around them."},
+{t:"What does user?.profile?.name give when profile is missing?",o:["undefined","A thrown error"],a:0,e:"Optional chaining stops at the missing value instead of crashing."},
+{t:"await can be used inside:",o:["An async function or a module top level","Any function at all"],a:0,e:"Using await elsewhere is a syntax error."},
+{t:"Which runs two requests at the same time?",o:["Promise.all","Two awaits one after another"],a:0,e:"Promise.all starts both immediately and waits for both."},
+{t:"node_modules should be:",o:["Listed in .gitignore","Committed to the repository"],a:0,e:"It is generated from package.json and is far too large to commit."}]},
+M2:{name:"M2 React fundamentals",secs:300,q:[
+{t:"A component name must start with:",o:["A capital letter","A lowercase letter"],a:0,e:"Lowercase names are treated as plain HTML tags."},
+{t:"Props are:",o:["Read only inside the child","Editable inside the child"],a:0,e:"Changing a prop breaks the one way flow of data."},
+{t:"Which key should you avoid in a list that can reorder?",o:["The array index","A stable id"],a:0,e:"Index keys make React show the wrong row after a reorder."},
+{t:"To set state from the previous value you should:",o:["Pass a function to the setter","Read the variable directly"],a:0,e:"Updates are batched, so the plain variable can be stale."},
+{t:"What does the function returned by useEffect do?",o:["Cleans up before the next run and on unmount","Sets the state"],a:0,e:"It is the cleanup function."}]},
+M3:{name:"M3 APIs and the back end",secs:300,q:[
+{t:"Which status code means not signed in?",o:["401","403","404"],a:0,e:"401 is unauthenticated. 403 means signed in but not allowed."},
+{t:"Which method creates a new resource?",o:["POST","GET"],a:0,e:"GET should never change anything on the server."},
+{t:"A CORS error is fixed by:",o:["The server sending the right header","Changing your fetch options"],a:0,e:"Only the server can allow your origin."},
+{t:"Where should a paid API key live?",o:["On a server or in a cloud function","In your front-end code"],a:0,e:"Anything shipped to the browser can be read by anyone."},
+{t:"Scales to zero means:",o:["It costs nothing while nobody calls it","It never runs"],a:0,e:"You pay only for actual use."}]},
+M4:{name:"M4 Data that scales",secs:300,q:[
+{t:"In NoSQL you model data around:",o:["The screens you will build","Perfectly normalised tables"],a:0,e:"Store it the way you read it."},
+{t:"Copying a name into another document is:",o:["Normal and often correct","Always a mistake"],a:0,e:"Duplication saves a read on every load."},
+{t:"Firestore security rules are:",o:["Not filters, so unsafe queries are rejected","Filters that quietly hide documents"],a:0,e:"If a query could return something forbidden, the whole query fails."},
+{t:"A write rule should also check:",o:["The keys, types and sizes of the data","Only who is signed in"],a:0,e:"Validation stops a signed-in user writing nonsense."},
+{t:"Before publishing rules you should:",o:["Test them in the emulator","Publish and watch what happens"],a:0,e:"Write a test that is meant to fail and confirm it does."}]},
+M5:{name:"M5 Ship it",secs:300,q:[
+{t:"Main should always be:",o:["Deployable","A place to experiment"],a:0,e:"Experiments belong on a branch."},
+{t:"A merge conflict means:",o:["Two edits touched the same lines","Git is broken"],a:0,e:"You decide which code is correct."},
+{t:"Continuous integration runs your checks:",o:["On every push","Once a month"],a:0,e:"That is how broken code is caught before main."},
+{t:"A good commit message explains:",o:["Why the change was made","Which lines changed"],a:0,e:"The diff already shows what changed."},
+{t:"Before any deploy you should know:",o:["How to roll it back","The server IP address"],a:0,e:"A deploy you cannot undo is a deploy you should not make."}]},
+M6:{name:"M6 Performance and quality",secs:300,q:[
+{t:"The first step in making a page faster is:",o:["Measure it","Remove the framework"],a:0,e:"Optimising without measuring usually wastes the effort."},
+{t:"The heaviest part of a typical page is:",o:["Images","CSS"],a:0,e:"Compress and resize them first."},
+{t:"If you change a file that a service worker caches you must also:",o:["Change the cache version","Ask every user to clear their browser"],a:0,e:"Otherwise phones keep serving the old copy."},
+{t:"Lighthouse is used to:",o:["Audit performance and accessibility","Host your website"],a:0,e:"It reports and suggests fixes."},
+{t:"You should test your site on:",o:["Throttled Slow 3G","Only fast office wifi"],a:0,e:"Your learners are not on office wifi."}]},
+M7:{name:"M7 Earning from your skills",secs:300,q:[
+{t:"Scope should be agreed:",o:["In writing before you start","Verbally as you go along"],a:0,e:"Written scope is what protects both sides."},
+{t:"A deposit should be taken:",o:["Before the work starts","After handover"],a:0,e:"It confirms the client is serious."},
+{t:"Pricing the outcome rather than the hours means:",o:["You charge for the result you deliver","You work unlimited hours"],a:0,e:"Getting faster should not cut your pay."},
+{t:"Handover should include:",o:["Repository, accounts and a written guide","Only the live link"],a:0,e:"The client must be able to continue without you."},
+{t:"A change request should:",o:["Have a stated cost and timeline","Be absorbed for free"],a:0,e:"Unpriced changes are how projects die."}]}};
+
+var TRACKS={
+  Beginner:{key:"Beginner",base:0,tag:"Foundations",
+    blurb:"From your first folder to your first live website.",
+    lessons:B_LESSONS,quizzes:B_QZ},
+  Masterclass:{key:"Masterclass",base:100,tag:"Professional",
+    blurb:"Modern JavaScript, React, APIs and getting paid for the work.",
+    lessons:M_LESSONS,quizzes:M_QZ}
+};
+var ALLQZ={};
+Object.keys(TRACKS).forEach(function(tk){
+  var q=TRACKS[tk].quizzes;
+  Object.keys(q).forEach(function(k){ALLQZ[k]=q[k]});
+});
+/* Current track. Reassigned by setTrack(); every view reads these. */
+var trackKey="Beginner", TRACK=TRACKS.Beginner, LESSONS=B_LESSONS, QZ=B_QZ, BASE=0;
+
 /* ---------- storage ---------- */
 function get(k,d){try{var v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}}
 function set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
@@ -143,6 +222,24 @@ var app=document.getElementById("app"), chrome=document.getElementById("chrome")
 var done=get(K,[]), last=get(L,0), stamp=get(K+"-t",0), dirty=get(K+"-d",false);
 var session=get(SK,null), results=get(RK,[]), outbox=get(OK,[]), labs=get(LABK,{});
 var profile=get("rc-profile",null), cfgc=get("rc-cfg",null), profDirty=get("rc-prof-d",false), profChecked=false;
+
+/* ---------- tracks ---------- */
+var TVK="rc-track-view";
+function applyTrack(k){
+  if(!TRACKS[k])k="Beginner";
+  trackKey=k;TRACK=TRACKS[k];LESSONS=TRACK.lessons;QZ=TRACK.quizzes;BASE=TRACK.base;
+}
+applyTrack(get(TVK,null)||(profile&&profile.track)||"Beginner");
+function setTrack(k){
+  if(k===trackKey)return;
+  applyTrack(k);set(TVK,trackKey);
+  tab=(tab==="quiz")?"quiz":"learn";home();
+}
+/* Global lesson id for a local index, and the reverse. */
+function gid(i){return BASE+i}
+function isDoneI(i){return done.indexOf(BASE+i)>=0}
+function tdone(){var n=0;for(var i=0;i<LESSONS.length;i++)if(isDoneI(i))n++;return n}
+function lastLocal(){var i=last-BASE;return (i>=0&&i<LESSONS.length)?i:0}
 var user=null, fb=null, syncMsg="", view="home", tab="learn", authReady=false, fbFail=false;
 var tick=null, sending=false, lastR=null, onboardStep=0, onboardDraft={};
 
@@ -189,7 +286,7 @@ function range(n){var r=[];for(var i=0;i<n;i++)r.push(i);return r}
 function shuf(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
 function uid8(){return(window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2,10)}
 function gradeOf(p){return p>=75?"A1":p>=70?"B2":p>=65?"B3":p>=60?"C4":p>=55?"C5":p>=50?"C6":p>=45?"D7":p>=40?"E8":"F9"}
-function pct(){return Math.round(done.length/LESSONS.length*100)}
+function pct(){return LESSONS.length?Math.round(tdone()/LESSONS.length*100):0}
 function avgq(){return results.length?Math.round(results.reduce(function(s,r){return s+r.pct},0)/results.length):0}
 function validProfile(){return !!(user&&profile&&profile.uid===user.uid)}
 function readMins(l){var w=(l.pts.join(" ")+l.lab.join(" ")).split(/\s+/).length;return Math.max(3,Math.round(w/95)+3)}
@@ -383,12 +480,34 @@ function home(){
   showTabs(true);buildTabs();
   var put=function(n){if(n)app.append(n)};
   put(heroCard());
-  if(tab==="learn"){ put(classCard()); put(continueCard()); lessonList(); }
-  else if(tab==="quiz"){ put(quizPanel()); }
+  if(tab==="learn"){ put(trackSwitch()); put(classCard()); put(continueCard()); lessonList(); }
+  else if(tab==="quiz"){ put(trackSwitch()); put(quizPanel()); }
   else { put(profileCard()); put(account()); put(aboutCard()); }
   app.append(h("p",{class:"faint center",style:"margin:22px 0 8px",
     text:"Everything saves on this device first. Built for weak networks."}));
   land(tab==="learn"?"Lessons":tab==="quiz"?"Quizzes":"My account");
+}
+
+/* Both tracks are visible to everyone. The learner's own track is the default,
+   but nobody is locked out of looking ahead. */
+function trackSwitch(){
+  var keys=Object.keys(TRACKS);
+  var seg=h("div",{class:"seg",style:"display:flex;width:100%;margin-top:16px",
+    role:"tablist","aria-label":"Choose a track"});
+  keys.forEach(function(k){
+    var T=TRACKS[k], on=(k===trackKey);
+    var mine=validProfile()&&profile.track===k;
+    var n=T.lessons.length, d=0;
+    for(var i=0;i<n;i++) if(done.indexOf(T.base+i)>=0) d++;
+    seg.append(h("button",{class:on?"on":"",style:"flex:1",role:"tab",
+      "aria-selected":on?"true":"false",
+      "aria-label":k+" track, "+d+" of "+n+" lessons complete"+(mine?", your track":""),
+      onclick:function(){setTrack(k)}},
+      k,h("span",{class:"faint",style:"margin-left:6px;font-size:11px",text:d+"/"+n})));
+  });
+  var note=h("p",{class:"faint",style:"margin:8px 2px 0;font-size:12.5px",
+    text:TRACK.blurb+(validProfile()&&profile.track!==trackKey?" · You are enrolled on "+profile.track+".":"")});
+  return h("div",{},seg,note);
 }
 
 function heroCard(){
@@ -401,32 +520,32 @@ function heroCard(){
       h("div",{class:"eyebrow",text:greetName?greet:"Rehoteq Academy"}),
       h("h1",{text:greetName?greetName:"Welcome to the classroom"}),
       h("p",{class:"lead",style:"margin:4px 0 0",
-        text:validProfile()?profile.track+" track · "+profile.mode:"Learn digital skills that pay. Start anywhere, finish on your phone."})),
-    ring(pct(),88,pct()+"%","Course",true)));
+        text:validProfile()?trackKey+" track · "+TRACK.tag:"Learn digital skills that pay. Start anywhere, finish on your phone."})),
+    ring(pct(),88,pct()+"%",trackKey==="Masterclass"?"Master":"Track",true)));
 
   var st=h("div",{class:"stats",style:"margin-top:16px"});
-  [[done.length+"/"+LESSONS.length,"Lessons"],[results.length,"Quizzes"],[avgq()+"%","Avg score"]].forEach(function(x){
+  [[tdone()+"/"+LESSONS.length,"Lessons"],[results.length,"Quizzes"],[avgq()+"%","Avg score"]].forEach(function(x){
     st.append(h("div",{class:"stat"},h("b",{class:"num",text:String(x[0])}),h("span",{text:x[1]})));
   });
   c.append(st);
 
   var nxt=nextLessonIndex();
-  var label=done.length===LESSONS.length?"Review the course":(done.length?"Continue · "+LESSONS[nxt].t:"Start lesson 1");
+  var label=tdone()===LESSONS.length?"Review the track":(tdone()?"Continue · "+LESSONS[nxt].t:"Start lesson 1");
   var go=h("button",{class:"btn gold block lg",style:"margin-top:16px",onclick:function(){
-    openLesson(done.length===LESSONS.length?0:nxt);
+    openLesson(tdone()===LESSONS.length?0:nxt);
   }},label,h("span",{text:"→"}));
   c.append(go);
   return c;
 }
 function nextLessonIndex(){
-  for(var i=0;i<LESSONS.length;i++) if(done.indexOf(i)<0) return i;
-  return last||0;
+  for(var i=0;i<LESSONS.length;i++) if(!isDoneI(i)) return i;
+  return lastLocal();
 }
 
 function classCard(){
   if(!validProfile()) return null;
   var has=cfgc&&(cfgc.next||cfgc.note);
-  if(!has&&!(profile.track==="Masterclass")) return null;
+  if(!has) return null;
   var c=h("div",{class:"card rise rise-1"});
   if(cfgc&&cfgc.next){
     c.append(h("div",{class:"card-title"},h("span",{class:"pill ok"},h("span",{class:"dot-live"}),"Next live class")));
@@ -439,15 +558,11 @@ function classCard(){
   if(cfgc&&cfgc.note){
     c.append(h("div",{class:"callout",style:"margin-top:12px"},h("div",null,h("b",{text:"Announcement "}),cfgc.note)));
   }
-  if(profile.track==="Masterclass"){
-    c.append(h("div",{class:"callout warn",style:"margin-top:12px"},h("div",null,
-      h("b",{text:"Masterclass lessons are being added. "}),"Start with the Beginner track below — it is your foundation.")));
-  }
   return c;
 }
 
 function continueCard(){
-  if(!done.length||done.length===LESSONS.length) return null;
+  if(!tdone()||tdone()===LESSONS.length) return null;
   var i=nextLessonIndex(), l=LESSONS[i];
   return h("div",{class:"card rise rise-2",style:"padding:0;overflow:hidden"},
     h("button",{class:"item",style:"padding:16px",onclick:function(){openLesson(i)}},
@@ -468,7 +583,7 @@ function lessonList(){
     g.items.push(i);
   });
   modules.forEach(function(g,gi){
-    var gdone=g.items.filter(function(j){return done.indexOf(j)>=0}).length;
+    var gdone=g.items.filter(function(j){return isDoneI(j)}).length;
     var complete=gdone===g.items.length;
     var section=h("section",{class:"module rise"+(gi<4?" rise-"+gi:"")});
     section.append(h("div",{class:"module-head"},
@@ -476,7 +591,7 @@ function lessonList(){
       h("span",{class:"pill"+(complete?" ok":""),text:complete?"✓ "+gdone+"/"+g.items.length:gdone+"/"+g.items.length})));
     var card=h("div",{class:"card pad-sm"});
     g.items.forEach(function(i){
-      var l=LESSONS[i], isDone=done.indexOf(i)>=0;
+      var l=LESSONS[i], isDone=isDoneI(i);
       card.append(h("button",{class:"item",onclick:function(){openLesson(i)}},
         h("span",{class:"dot"+(isDone?" ok":" num"),text:isDone?"✓":String(i+1)}),
         h("span",{class:"it-body"},
@@ -495,7 +610,7 @@ function lessonList(){
 function quizPanel(){
   var frag=document.createDocumentFragment();
   if(session){
-    var Q=QZ[session.key];
+    var Q=ALLQZ[session.key];
     frag.append(h("div",{class:"card rise",style:"border-color:var(--gold)"},
       h("div",{class:"card-title"},h("span",{class:"pill gold",text:"⏱ Quiz in progress"})),
       h("h2",{text:Q.name}),
@@ -522,7 +637,7 @@ function quizPanel(){
     results.slice(0,8).forEach(function(r){
       hist.append(h("button",{class:"item",onclick:function(){showResult(r)}},
         h("span",{class:"it-body"},
-          h("span",{class:"it-title",text:QZ[r.quiz]?QZ[r.quiz].name:r.quiz}),
+          h("span",{class:"it-title",text:ALLQZ[r.quiz]?ALLQZ[r.quiz].name:r.quiz}),
           h("span",{class:"it-sub",text:new Date(r.takenAt).toLocaleString(undefined,{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})+" · "+r.score+"/"+r.total})),
         h("span",{class:"pill "+gradeTone(r.grade),text:r.pct+"% · "+r.grade})));
     });
@@ -539,7 +654,7 @@ function quizPanel(){
    LESSON
    ===================================================================== */
 function openLesson(i){
-  last=i;view=i;set(L,i);
+  last=gid(i);view=i;set(L,last);
   var l=LESSONS[i];
   app.replaceChildren();showTabs(false);window.scrollTo(0,0);
 
@@ -551,10 +666,10 @@ function openLesson(i){
   head.append(h("div",{class:"row row-tight",style:"margin-top:10px"},
     h("span",{class:"pill",text:"⏱ "+readMins(l)+" min"}),
     h("span",{class:"pill",text:l.lab.length+" lab steps"}),
-    done.indexOf(i)>=0?h("span",{class:"pill ok",text:"✓ Completed"}):null));
+    isDoneI(i)?h("span",{class:"pill ok",text:"✓ Completed"}):null));
   head.append(h("div",{class:"segs",style:"margin-top:14px",role:"img",
-    "aria-label":"Course progress: "+done.length+" of "+LESSONS.length+" lessons complete"},
-    LESSONS.map(function(_,j){return h("span",{class:done.indexOf(j)>=0?"on":(j===i?"cur":"")})})));
+    "aria-label":trackKey+" progress: "+tdone()+" of "+LESSONS.length+" lessons complete"},
+    LESSONS.map(function(_,j){return h("span",{class:isDoneI(j)?"on":(j===i?"cur":"")})})));
   app.append(head);
 
   var body=h("div",{class:"card rise rise-1 lesson-body"});
@@ -587,13 +702,13 @@ function openLesson(i){
   app.append(labCard);
 
   /* Actions */
-  var isDone=done.indexOf(i)>=0;
+  var isDone=isDoneI(i);
   var mark=h("button",{class:"btn block lg "+(isDone?"soft":"gold"),style:"margin-top:4px"},
     isDone?"✓ Completed — tap to undo":"Mark this lesson complete");
   mark.onclick=function(){
-    var j=done.indexOf(i);
+    var j=done.indexOf(gid(i));
     if(j>=0){done.splice(j,1);toast("Marked as not done")}
-    else{done.push(i);toast(done.length===LESSONS.length?"Course complete! 🎉":"Lesson complete","ok");if(done.length===LESSONS.length)confetti()}
+    else{done.push(gid(i));var all=tdone()===LESSONS.length;toast(all?trackKey+" track complete! 🎉":"Lesson complete","ok");if(all)confetti()}
     save();openLesson(i);
   };
   app.append(mark);
@@ -610,7 +725,7 @@ function openLesson(i){
    QUIZ RUNNER
    ===================================================================== */
 function startQuiz(k){
-  var Q=QZ[k];
+  var Q=ALLQZ[k];
   session={id:uid8(),key:k,end:Date.now()+Q.secs*1000,i:0,ans:{},
     order:shuf(range(Q.q.length)).map(function(q){return{q:q,o:shuf(range(Q.q[q].o.length))}})};
   set(SK,session);showQuiz();
@@ -632,7 +747,7 @@ function showQuiz(){
   if(Date.now()>=session.end){finish();return}
   view="quiz";app.replaceChildren();showTabs(false);window.scrollTo(0,0);
 
-  var Q=QZ[session.key], it=session.order[session.i], q=Q.q[it.q], n=session.order.length;
+  var Q=ALLQZ[session.key], it=session.order[session.i], q=Q.q[it.q], n=session.order.length;
   var answered=Object.keys(session.ans).length;
 
   var head=h("div",{class:"quiz-head"},
@@ -679,7 +794,7 @@ function confirmFinish(left){
 function finish(){
   clearInterval(tick);
   if(!session)return;
-  var Q=QZ[session.key], sc=0;
+  var Q=ALLQZ[session.key], sc=0;
   session.order.forEach(function(it){if(session.ans[it.q]===Q.q[it.q].a)sc++});
   var tot=Q.q.length, p=Math.round(sc/tot*100);
   var r={id:session.id,quiz:session.key,score:sc,total:tot,pct:p,grade:gradeOf(p),takenAt:Date.now(),ans:session.ans,order:session.order};
@@ -693,7 +808,7 @@ function finish(){
 }
 function showResult(r){
   lastR=r;view="result";app.replaceChildren();showTabs(false);window.scrollTo(0,0);
-  var Q=QZ[r.quiz];
+  var Q=ALLQZ[r.quiz];
   var verdict=r.pct>=75?"Excellent. You have this.":r.pct>=50?"Solid pass. Review the misses below.":"Not yet — reread the lesson and try again.";
 
   var hero=h("div",{class:"card hero score-hero rise"},
@@ -753,7 +868,16 @@ function profileCard(){
     "aria-valuenow":lessonsPct,"aria-valuemin":"0","aria-valuemax":"100",
     "aria-label":"Lessons complete: "+lessonsPct+" percent"},h("i",{style:"width:"+lessonsPct+"%"})));
   c.append(h("div",{class:"spread faint"},
-    h("span",{text:done.length+" of "+LESSONS.length+" lessons"}),h("span",{text:lessonsPct+"%"})));
+    h("span",{text:trackKey+": "+tdone()+" of "+LESSONS.length+" lessons"}),h("span",{text:lessonsPct+"%"})));
+  Object.keys(TRACKS).forEach(function(k){
+    if(k===trackKey)return;
+    var T=TRACKS[k], n=T.lessons.length, d=0;
+    for(var i=0;i<n;i++) if(done.indexOf(T.base+i)>=0) d++;
+    if(!d)return;
+    c.append(h("div",{class:"spread faint",style:"margin-top:4px"},
+      h("span",{text:k+": "+d+" of "+n+" lessons"}),
+      h("span",{text:Math.round(d/n*100)+"%"})));
+  });
   var kv=[["Attending",profile.mode],["Device",profile.device],["Experience",profile.level],["Goal",profile.goal],["Phone",profile.phone]];
   var grid=h("div",{style:"margin-top:16px;display:grid;grid-template-columns:auto 1fr;gap:7px 16px;font-size:14px"});
   kv.forEach(function(x){if(!x[1])return;

@@ -83,7 +83,33 @@ const CFG = {
   projectId: "rehoteq-classroom",
   appId: "1:773863865025:web:8b11f1cd911e9cf05b3240"
 };
-const TOTAL_LESSONS = 13;
+/* Progress is one flat array of global lesson ids on users/{uid}.done.
+   Beginner occupies 0-12, Masterclass 100-113, so a learner can hold both. */
+const TRACKS = {
+  Beginner:    { base: 0,   total: 13 },
+  Masterclass: { base: 100, total: 14 }
+};
+const TRACK_KEYS = Object.keys(TRACKS);
+const DEFAULT_TRACK = "Beginner";
+
+/* How many lessons of one track this learner has finished. */
+function doneIn(list, key){
+  const t = TRACKS[key]; if (!t) return 0;
+  let n = 0;
+  for (const g of (list || [])) if (g >= t.base && g < t.base + t.total) n++;
+  return n;
+}
+/* The track a learner should be scored against, plus their count and total. */
+function trackProgress(p){
+  const key = TRACKS[p.track] ? p.track : DEFAULT_TRACK;
+  const counts = {};
+  TRACK_KEYS.forEach(k => counts[k] = doneIn(p.doneList, k));
+  // If they have progress outside their enrolled track, score the fuller one.
+  let scored = key;
+  TRACK_KEYS.forEach(k => { if (counts[k] > counts[scored]) scored = k; });
+  return { key: scored, enrolled: key, counts,
+    done: counts[scored], total: TRACKS[scored].total };
+}
 const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
 
 /* ---------- tiny DOM helper ---------- */
@@ -363,9 +389,14 @@ function derive(){
     ? Math.round(perLearner[id].reduce((s, r) => s + r.pct, 0) / perLearner[id].length) : null;
   const avgAll = results.length ? Math.round(results.reduce((s, r) => s + r.pct, 0) / results.length) : 0;
   const completion = ids.length
-    ? Math.round(ids.reduce((s, id) => s + Math.min(1, people[id].lessons / TOTAL_LESSONS), 0) / ids.length * 100) : 0;
+    ? Math.round(ids.reduce((s, id) => {
+        const t = trackProgress(people[id]);
+        return s + Math.min(1, t.total ? t.done / t.total : 0);
+      }, 0) / ids.length * 100) : 0;
+  const byTrack = {};
+  TRACK_KEYS.forEach(k => byTrack[k] = ids.filter(id => trackProgress(people[id]).enrolled === k).length);
   const active7 = new Set(results.filter(r => Date.now() - r.at.getTime() < 7 * 864e5).map(r => r.uid)).size;
-  return { ids, perLearner, avgFor, avgAll, completion, active7 };
+  return { ids, perLearner, avgFor, avgAll, completion, active7, byTrack };
 }
 
 /* =====================================================================
@@ -373,7 +404,7 @@ function derive(){
    ===================================================================== */
 function overviewView(){
   const { people, results, config } = DATA;
-  const { ids, avgAll, completion, active7, perLearner, avgFor } = derive();
+  const { ids, avgAll, completion, active7, perLearner, avgFor, byTrack } = derive();
 
   const head = h("header", { class: "view-head" },
     h("div", { class: "eyebrow", text: "Today · " + new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" }) }),
@@ -382,7 +413,7 @@ function overviewView(){
 
   const kpis = h("section", { class: "grid g4 rise" },
     kpi(ids.length, "Learners enrolled", (active7 + " active this week"), ""),
-    kpi(completion + "%", "Average course completion", TOTAL_LESSONS + " lessons in the track", "gold"),
+    kpi(completion + "%", "Average course completion", TRACK_KEYS.map(k => byTrack[k] + " " + k).join(" · "), "gold"),
     kpi(results.length, "Quiz attempts", "recorded", "sky"),
     kpi(avgAll + "%", "Average quiz score", avgAll >= 50 ? "class is passing" : "needs support", avgAll >= 50 ? "" : "clay"));
 
@@ -432,7 +463,7 @@ function overviewView(){
   /* top learners */
   const ranked = ids.map(id => ({
     id, p: people[id],
-    lessons: pctOf(people[id].lessons, TOTAL_LESSONS),
+    lessons: (t => pctOf(t.done, t.total))(trackProgress(people[id])),
     avg: avgFor(id),
     attempts: (perLearner[id] || []).length
   })).sort((a, b) => (b.lessons + (b.avg || 0)) - (a.lessons + (a.avg || 0))).slice(0, 5);
@@ -534,7 +565,9 @@ function learnersView(){
     const p = people[id];
     return { id, name: p.name || p.email || "Unnamed", phone: p.phone || "", email: p.email || "",
       track: p.track || "—", mode: p.mode || "—", device: p.device || "", level: p.level || "", goal: p.goal || "—",
-      lessons: pctOf(p.lessons, TOTAL_LESSONS), quizzes: (perLearner[id] || []).length, avg: avgFor(id) };
+      lessons: (t => pctOf(t.done, t.total))(trackProgress(p)),
+      scored: trackProgress(p).key,
+      quizzes: (perLearner[id] || []).length, avg: avgFor(id) };
   });
 
   const search = h("input", { type: "search", placeholder: "Search name, phone, email or goal",
@@ -604,8 +637,8 @@ function learnersView(){
   exportBtn.onclick = () => {
     const list = visible();
     download("rehoteq-learners.csv", toCSV([
-      ["Name","Phone","Email","Track","Attending","Device","Level","Goal","Lessons %","Quizzes","Average %"],
-      ...list.map(r => [r.name, r.phone, r.email, r.track, r.mode, r.device, r.level, r.goal, r.lessons, r.quizzes, r.avg === null ? "" : r.avg])
+      ["Name","Phone","Email","Track","Attending","Device","Level","Goal","Lessons %","Scored track","Quizzes","Average %"],
+      ...list.map(r => [r.name, r.phone, r.email, r.track, r.mode, r.device, r.level, r.goal, r.lessons, r.scored, r.quizzes, r.avg === null ? "" : r.avg])
     ]));
     toast("Exported " + list.length + " learners", "ok");
   };
@@ -625,10 +658,12 @@ function learnersView(){
 function openLearner(id){
   // A result can reference a uid with no learners/users document (they took a quiz
   // before finishing onboarding, or their profile is not readable). Never crash on it.
-  const p = DATA.people[id] || { uid: id, name: "", email: "", phone: "", lessons: 0, orphan: true };
+  const p = DATA.people[id] || { uid: id, name: "", email: "", phone: "", lessons: 0, doneList: [], orphan: true };
   const { perLearner, avgFor } = derive();
   const attempts = (perLearner[id] || []).slice().sort((a, b) => b.at - a.at);
-  const lessons = pctOf(p.lessons, TOTAL_LESSONS);
+  const tp = trackProgress(p);
+  const lessons = pctOf(tp.done, tp.total);
+  const bothTracks = TRACK_KEYS.filter(k => tp.counts[k] > 0);
 
   const close = () => back.remove();
   const back = h("div", { class: "sheet-back", onclick: e => { if (e.target === back) close(); } });
@@ -647,11 +682,16 @@ function openLearner(id){
 
     h("div", { class: "grid g2" },
       h("div", { class: "kpi" }, h("b", { text: lessons + "%" }), h("span", { text: "Lessons complete" }),
-        h("div", { class: "kpi-sub", text: p.lessons + " of " + TOTAL_LESSONS })),
+        h("div", { class: "kpi-sub", text: tp.done + " of " + tp.total + " · " + tp.key })),
       h("div", { class: "kpi gold" }, h("b", { text: avgFor(id) === null ? "—" : avgFor(id) + "%" }),
         h("span", { text: "Quiz average" }), h("div", { class: "kpi-sub", text: attempts.length + " attempt" + (attempts.length === 1 ? "" : "s") }))),
 
     h("div", { class: "bar", style: "margin:14px 0 4px" }, h("i", { style: "width:" + lessons + "%" })),
+
+    bothTracks.length > 1 ? h("div", { style: "margin:10px 0 2px;display:grid;gap:6px" },
+      ...TRACK_KEYS.map(k => h("div", { class: "spread", style: "font-size:12.5px" },
+        h("span", { class: "mute", text: k + (tp.enrolled === k ? " (enrolled)" : "") }),
+        h("span", { class: "num", text: tp.counts[k] + " / " + TRACKS[k].total })))) : null,
 
     h("dl", { class: "kv" },
       ...[["Track", p.track], ["Attending", p.mode], ["Device", p.device], ["Experience", p.level],
