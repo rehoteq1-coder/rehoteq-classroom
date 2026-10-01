@@ -66,8 +66,9 @@ service cloud.firestore {
     }
     match /users/{uid} {
       allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
-      allow write: if request.auth != null && request.auth.uid == uid
+      allow create, update: if request.auth != null && request.auth.uid == uid
                    && request.resource.data.keys().hasOnly(['done', 'updatedAt', 'email']);
+      allow delete: if isAdmin();
     }
     match /learners/{uid} {
       allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
@@ -77,7 +78,7 @@ service cloud.firestore {
         && request.resource.data.name is string
         && request.resource.data.name.size() >= 2 && request.resource.data.name.size() <= 80
         && request.resource.data.phone is string && request.resource.data.phone.size() <= 20;
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
     match /results/{id} {
       allow create: if request.auth != null
@@ -90,7 +91,7 @@ service cloud.firestore {
                   && (resource.data.uid == request.auth.uid || isAdmin());
       allow update: if request.auth != null && resource.data.uid == request.auth.uid
                     && request.resource.data == resource.data;
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
     match /config/{id} {
       allow read: if request.auth != null;
@@ -124,7 +125,7 @@ service cloud.firestore {
         && request.resource.data.link.matches('https://.*')
         && request.resource.data.note is string
         && request.resource.data.note.size() <= 300;
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
     // ---- marks: you own the document, the learner can only read their own ----
@@ -138,7 +139,7 @@ service cloud.firestore {
         && request.resource.data.points is number
         && request.resource.data.score >= 0
         && request.resource.data.score <= request.resource.data.points;
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
   }
 }
@@ -161,7 +162,7 @@ STEP 2: MAKE YOURSELF ADMIN (once)
 
 STEP 3: UPLOAD all files to GitHub (replace old ones):
 index.html, join.html, admin.html, styles.css, sw.js, manifest.json, icon-192.png,
-icon-512.png, README.txt (optional). sw.js is now v15.
+icon-512.png, README.txt (optional). sw.js is now v16.
 The tests/ folder and masterclass-backlog.txt are for you, not for learners. Uploading
 them is harmless - GitHub Pages ignores them and the service worker never caches them -
 but they are not needed on the live site.
@@ -224,7 +225,7 @@ NOTES
 - The admin console scores each learner against the track they have actually progressed furthest
   in, and shows a per-track breakdown in the learner sheet when they have worked on both.
 - Learners store name, phone, goal and progress. Keep the consent line and only use the data for the training.
-- To update later change v15 to v16 in sw.js and upload again. Do this every time you edit
+- To update later change v16 to v17 in sw.js and upload again. Do this every time you edit
   index.html, join.html, admin.html or styles.css, otherwise phones keep the old cached copy.
 - Not built yet: certificates, audio/video downloads, attendance QR.
 

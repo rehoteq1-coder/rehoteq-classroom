@@ -243,10 +243,26 @@ if (SUITE === "admin") {
     const chidi = [...doc.querySelectorAll("tbody tr")].find(tr => /Chidi/.test(tr.textContent));
     ok("the dual-track learner is in the table", !!chidi);
     chidi.click(); await sleep(80);
-    const sheet = txt(doc.querySelector(".sheet"));
+    const sheetEl = doc.querySelector(".sheet");
+    const sheet = txt(sheetEl);
     ok("sheet shows both tracks for a dual learner", /Beginner/.test(sheet) && /Masterclass/.test(sheet));
     ok("sheet marks the enrolled track", /enrolled/.test(sheet));
     ok("sheet uses the shipped Masterclass total", /\/ 6/.test(sheet), sheet.slice(0, 300));
+
+    const removeBtn = sheetEl.querySelector(".btn.danger");
+    ok("sheet has remove participant button", !!removeBtn);
+    if (removeBtn) {
+      removeBtn.click(); await sleep(40);
+      ok("removal requires confirmation", txt(doc.querySelector(".sheet")).includes("Remove this participant?"));
+      const confirmBtn = [...doc.querySelectorAll(".sheet .btn.danger")].find(b => /Yes, remove/i.test(b.textContent));
+      ok("confirmation button exists", !!confirmBtn);
+      if (confirmBtn) {
+        confirmBtn.click(); await sleep(80);
+        ok("sheet closes on removal", !doc.querySelector(".sheet"));
+        const newTable = txt(doc.querySelector("tbody"));
+        ok("participant is removed from table", !newTable.includes("Chidi"));
+      }
+    }
 
     links.find(a => /Results/.test(a.textContent)).click(); await sleep(80);
     ok("results view renders", /Results|attempt/i.test(txt(doc.getElementById("root"))));
@@ -261,6 +277,7 @@ if (SUITE === "join") {
   const root = doc.getElementById("root") || doc.body;
   const body = txt(root);
   ok("wizard renders", root.children.length > 0);
+  ok("landing page has teacher tab linking to admin.html", !!doc.querySelector('a.teacher-tab[href="admin.html"]'));
   ok("starts with the profile question, not a password", /name/i.test(body) && !doc.querySelector('input[type="password"]'));
   ok("returning learners have a way in", /already have an account/i.test(body));
   ok("track options are offered in the flow", /Beginner/.test(doc.documentElement.innerHTML));
