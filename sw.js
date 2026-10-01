@@ -1,5 +1,5 @@
 // Change the version below every time you update index.html or other files.
-const CACHE = 'rehoteq-classroom-v12';
+const CACHE = 'rehoteq-classroom-v13';
 const SHELL = ['./', './index.html', './join.html', './admin.html', './styles.css',
                './manifest.json', './icon-192.png', './icon-512.png'];
 

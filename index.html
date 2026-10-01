@@ -141,15 +141,7 @@ var M_LESSONS=[
 {m:"M1 Modern JavaScript",t:"Modules, npm and tooling",pts:["export and import split code into files the browser can load directly with script type=module.","package.json records your dependencies. node_modules is generated and must stay in .gitignore.","A bundler such as Vite gives instant reloads while you build and one small file when you ship."],lab:["Split a single long script into three modules and import them.","Start a Vite project and run the dev server.","Build for production and write down the output file size."]},
 {m:"M2 React fundamentals",t:"Components, props and JSX",pts:["A component is a function that returns JSX. Name it with a capital letter or React treats it as an HTML tag.","Props pass data down and are read only. Never assign to a prop inside the child.","Every item in a rendered list needs a stable key. The array index is not stable once the list reorders."],lab:["Build a LessonCard component that takes a title and minutes as props.","Render eight of them from an array using proper keys.","Extract the badge inside the card into its own component."]},
 {m:"M2 React fundamentals",t:"State and effects",pts:["useState returns the value and a setter. Never change state directly; always call the setter.","State updates are batched. Use the function form of the setter when the next value depends on the old one.","useEffect runs after render. The dependency array decides when it runs again and the returned function cleans up."],lab:["Build a counter, then fix it so three rapid clicks always add three.","Load data inside useEffect and show a loading state while it arrives.","Add a cleanup that cancels the request if the component is removed first."]},
-{m:"M2 React fundamentals",t:"Forms, lists and lifting state",pts:["A controlled input keeps its value in state, so the component always knows what the user typed.","When two components need the same data, move that state up to their closest shared parent.","Derive what you can instead of storing it. A filtered list should be computed during render, not kept in state."],lab:["Build a student list with a controlled add form.","Add a search box and compute the filtered list during render.","Lift the selected student up so two panels stay in sync."]},
-{m:"M3 APIs and the back end",t:"HTTP and REST in practice",pts:["GET reads, POST creates, PUT and PATCH update, DELETE removes. Keep each method honest.","Status codes carry meaning: 200 fine, 201 created, 400 bad request, 401 not signed in, 403 not allowed, 404 missing, 500 server fault.","A CORS error comes from the server, not your code. The server must send the Access-Control-Allow-Origin header."],lab:["Call a public API with GET and with POST and read the status codes.","Cause a 404 and a 400 on purpose and handle both gracefully.","Reproduce a CORS error and write down exactly what the server would need to send."]},
-{m:"M3 APIs and the back end",t:"Serverless functions and secrets",pts:["Anything in front-end code is public. Keys that cost money or grant admin rights belong on a server.","A cloud function is a small piece of server code that runs on demand and costs nothing while nobody calls it.","Keep secrets in environment variables, never in the repository, and rotate any key that has leaked."],lab:["Write a cloud function that calls a paid API and returns only the result.","Move one key out of your front end into that function.","Add a .env file and confirm .gitignore excludes it."]},
-{m:"M4 Data that scales",t:"Modelling data for NoSQL",pts:["Design around the screens you will build, not around tidy tables. Store data the way you will read it.","Copying a learner name into a result document is normal in NoSQL. It saves a lookup on every single read.","Every query needs an index. Compound queries need a compound index, and Firestore tells you which one to create."],lab:["Sketch the documents needed for a results screen that shows the learner name.","Write a query that requires a compound index and create it.","Count the reads used by one dashboard load."]},
-{m:"M4 Data that scales",t:"Security rules in depth",pts:["Rules are not filters. A query that could return a document the user may not read is rejected outright.","Validate shape as well as access: check the keys, types and sizes of request.resource.data on every write.","Test rules in the emulator before publishing. Write a test that is supposed to fail and make sure it does."],lab:["Write rules so a learner can read only their own results.","Add validation that rejects a score higher than the total.","Run the emulator and prove an attacker cannot write someone else's document."]},
-{m:"M5 Ship it",t:"Git for teams",pts:["One branch per piece of work, opened as a pull request. Main stays deployable at all times.","A conflict is two edits to the same lines. Open the file, keep the right code, remove the markers, then commit.","Write commit messages that explain why. The diff already shows what changed."],lab:["Create a branch, make a change and open a pull request.","Cause a merge conflict on purpose and resolve it.","Review someone else's pull request and leave one useful comment."]},
-{m:"M5 Ship it",t:"Deploy and automate",pts:["Continuous integration runs your checks on every push, so broken code never reaches main.","A GitHub Actions workflow is a YAML file listing the jobs and steps that run on a trigger.","Always know how to roll back. A deploy you cannot undo is a deploy you should not make."],lab:["Add an Action that runs on every push and fails when there is an error.","Deploy automatically whenever main changes.","Roll a deployment back and time how long it takes."]},
-{m:"M6 Performance and quality",t:"Fast on a 3G phone",pts:["Measure before you optimise. Lighthouse and the Network tab show you where the time actually goes.","The biggest wins are usually images, then unused JavaScript, then blocking fonts.","Cache deliberately with a service worker, and change the cache version or phones keep serving the old files."],lab:["Run Lighthouse on your project and write down the three worst items.","Shrink the largest image and the largest script, then measure again.","Test the whole flow on throttled Slow 3G."]},
-{m:"M7 Earning from your skills",t:"Freelancing and client work",pts:["Agree the scope in writing before you start: what is included, what is not, and what a change costs.","Price the outcome rather than the hours, and take a deposit before the first line of code.","Hand over properly: the repository, the accounts, a short written guide, and a clear end to your responsibility."],lab:["Write a one page proposal for a real local business.","Build a portfolio page with three projects and the problem each one solved.","Draft your rate card and a simple contract you would actually send."]}
+{m:"M2 React fundamentals",t:"Forms, lists and lifting state",pts:["A controlled input keeps its value in state, so the component always knows what the user typed.","When two components need the same data, move that state up to their closest shared parent.","Derive what you can instead of storing it. A filtered list should be computed during render, not kept in state."],lab:["Build a student list with a controlled add form.","Add a search box and compute the filtered list during render.","Lift the selected student up so two panels stay in sync."]}
 ];
 
 var M_QZ={
@@ -164,44 +156,14 @@ M2:{name:"M2 React fundamentals",secs:300,q:[
 {t:"Props are:",o:["Read only inside the child","Editable inside the child"],a:0,e:"Changing a prop breaks the one way flow of data."},
 {t:"Which key should you avoid in a list that can reorder?",o:["The array index","A stable id"],a:0,e:"Index keys make React show the wrong row after a reorder."},
 {t:"To set state from the previous value you should:",o:["Pass a function to the setter","Read the variable directly"],a:0,e:"Updates are batched, so the plain variable can be stale."},
-{t:"What does the function returned by useEffect do?",o:["Cleans up before the next run and on unmount","Sets the state"],a:0,e:"It is the cleanup function."}]},
-M3:{name:"M3 APIs and the back end",secs:300,q:[
-{t:"Which status code means not signed in?",o:["401","403","404"],a:0,e:"401 is unauthenticated. 403 means signed in but not allowed."},
-{t:"Which method creates a new resource?",o:["POST","GET"],a:0,e:"GET should never change anything on the server."},
-{t:"A CORS error is fixed by:",o:["The server sending the right header","Changing your fetch options"],a:0,e:"Only the server can allow your origin."},
-{t:"Where should a paid API key live?",o:["On a server or in a cloud function","In your front-end code"],a:0,e:"Anything shipped to the browser can be read by anyone."},
-{t:"Scales to zero means:",o:["It costs nothing while nobody calls it","It never runs"],a:0,e:"You pay only for actual use."}]},
-M4:{name:"M4 Data that scales",secs:300,q:[
-{t:"In NoSQL you model data around:",o:["The screens you will build","Perfectly normalised tables"],a:0,e:"Store it the way you read it."},
-{t:"Copying a name into another document is:",o:["Normal and often correct","Always a mistake"],a:0,e:"Duplication saves a read on every load."},
-{t:"Firestore security rules are:",o:["Not filters, so unsafe queries are rejected","Filters that quietly hide documents"],a:0,e:"If a query could return something forbidden, the whole query fails."},
-{t:"A write rule should also check:",o:["The keys, types and sizes of the data","Only who is signed in"],a:0,e:"Validation stops a signed-in user writing nonsense."},
-{t:"Before publishing rules you should:",o:["Test them in the emulator","Publish and watch what happens"],a:0,e:"Write a test that is meant to fail and confirm it does."}]},
-M5:{name:"M5 Ship it",secs:300,q:[
-{t:"Main should always be:",o:["Deployable","A place to experiment"],a:0,e:"Experiments belong on a branch."},
-{t:"A merge conflict means:",o:["Two edits touched the same lines","Git is broken"],a:0,e:"You decide which code is correct."},
-{t:"Continuous integration runs your checks:",o:["On every push","Once a month"],a:0,e:"That is how broken code is caught before main."},
-{t:"A good commit message explains:",o:["Why the change was made","Which lines changed"],a:0,e:"The diff already shows what changed."},
-{t:"Before any deploy you should know:",o:["How to roll it back","The server IP address"],a:0,e:"A deploy you cannot undo is a deploy you should not make."}]},
-M6:{name:"M6 Performance and quality",secs:300,q:[
-{t:"The first step in making a page faster is:",o:["Measure it","Remove the framework"],a:0,e:"Optimising without measuring usually wastes the effort."},
-{t:"The heaviest part of a typical page is:",o:["Images","CSS"],a:0,e:"Compress and resize them first."},
-{t:"If you change a file that a service worker caches you must also:",o:["Change the cache version","Ask every user to clear their browser"],a:0,e:"Otherwise phones keep serving the old copy."},
-{t:"Lighthouse is used to:",o:["Audit performance and accessibility","Host your website"],a:0,e:"It reports and suggests fixes."},
-{t:"You should test your site on:",o:["Throttled Slow 3G","Only fast office wifi"],a:0,e:"Your learners are not on office wifi."}]},
-M7:{name:"M7 Earning from your skills",secs:300,q:[
-{t:"Scope should be agreed:",o:["In writing before you start","Verbally as you go along"],a:0,e:"Written scope is what protects both sides."},
-{t:"A deposit should be taken:",o:["Before the work starts","After handover"],a:0,e:"It confirms the client is serious."},
-{t:"Pricing the outcome rather than the hours means:",o:["You charge for the result you deliver","You work unlimited hours"],a:0,e:"Getting faster should not cut your pay."},
-{t:"Handover should include:",o:["Repository, accounts and a written guide","Only the live link"],a:0,e:"The client must be able to continue without you."},
-{t:"A change request should:",o:["Have a stated cost and timeline","Be absorbed for free"],a:0,e:"Unpriced changes are how projects die."}]}};
+{t:"What does the function returned by useEffect do?",o:["Cleans up before the next run and on unmount","Sets the state"],a:0,e:"It is the cleanup function."}]}};
 
 var TRACKS={
   Beginner:{key:"Beginner",base:0,tag:"Foundations",
     blurb:"From your first folder to your first live website.",
     lessons:B_LESSONS,quizzes:B_QZ},
   Masterclass:{key:"Masterclass",base:100,tag:"Professional",
-    blurb:"Modern JavaScript, React, APIs and getting paid for the work.",
+    blurb:"Modern JavaScript and React. The next step after the basics.",
     lessons:M_LESSONS,quizzes:M_QZ}
 };
 var ALLQZ={};
@@ -708,8 +670,11 @@ function openLesson(i){
   mark.onclick=function(){
     var j=done.indexOf(gid(i));
     if(j>=0){done.splice(j,1);toast("Marked as not done")}
-    else{done.push(gid(i));var all=tdone()===LESSONS.length;toast(all?trackKey+" track complete! 🎉":"Lesson complete","ok");if(all)confetti()}
+    else{done.push(gid(i))}
+    var all=j<0&&tdone()===LESSONS.length;
     save();openLesson(i);
+    if(j<0)toast(all?trackKey+" track complete! 🎉":"Lesson complete","ok");
+    if(all)confetti();
   };
   app.append(mark);
 
@@ -803,8 +768,8 @@ function finish(){
   set(OK,outbox);
   session=null;try{localStorage.removeItem(SK)}catch(e){}
   showResult(r);
-  if(p>=70) confetti();
   syncResults();
+  if(p>=70) confetti();
 }
 function showResult(r){
   lastR=r;view="result";app.replaceChildren();showTabs(false);window.scrollTo(0,0);
@@ -840,7 +805,10 @@ function showResult(r){
   syncResults();
 }
 function confetti(){
-  if(matchMedia("(prefers-reduced-motion:reduce)").matches)return;
+  try{ if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion:reduce)").matches)return }catch(e){ return }
+  try{ confettiBurst() }catch(e){}
+}
+function confettiBurst(){
   var box=h("div",{class:"confetti"}), colors=["#12855a","#e2ad34","#2aa374","#f3cd74","#b4552f"];
   for(var i=0;i<42;i++){
     var p=h("i",{style:"left:"+Math.random()*100+"%;top:-20px;background:"+colors[i%colors.length]+

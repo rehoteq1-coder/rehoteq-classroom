@@ -44,9 +44,9 @@ index.html still has the same three-step form as a safety net if someone signs u
 LEARNER FLOW
 Open link > three onboarding questions > create account > Personal dashboard.
 Dashboard: greeting, progress, lessons/quizzes/average, next live class + Join button, announcement,
-and a track switcher. Beginner holds 13 lessons and 7 timed quizzes (B1-B7); Masterclass holds
-14 lessons and 7 timed quizzes (M1-M7). Every learner can read both tracks; the one they signed
-up for is simply the default.
+and a track switcher. Beginner holds 13 lessons and 7 timed quizzes (B1-B7); Masterclass starts
+small with 6 lessons and 2 quizzes (M1-M2). Every learner can read both tracks; the one they
+signed up for is simply the default.
 Everything still works offline. Progress, profile and quiz results save on the phone first and sync when online.
 
 TEACHER FLOW
@@ -144,9 +144,12 @@ STEP 4: REVIEW CHECKLIST
 NOTES
 - Quiz answers are inside the page (fine for practice, not for graded exams).
 - Firebase web config is public by design; the rules protect the data.
-- Both tracks are live. Masterclass covers: M1 Modern JavaScript, M2 React fundamentals,
-  M3 APIs and the back end, M4 Data that scales, M5 Ship it, M6 Performance and quality,
-  M7 Earning from your skills.
+- Both tracks are live. Masterclass currently teaches M1 Modern JavaScript and
+  M2 React fundamentals. M3 to M7 (APIs and the back end, Data that scales, Ship it,
+  Performance and quality, Earning from your skills) are written and waiting in
+  masterclass-backlog.txt. That file is not loaded by the app, so it costs a learner nothing.
+  Switch a module on by following the instructions at the top of it. Add whole modules, and
+  always append - ids 106-113 are reserved for the backlog in the order it lists.
 - HOW PROGRESS IS STORED (important before you edit the lessons). users/{uid}.done is one flat
   array of GLOBAL lesson ids. Beginner lessons are 0-12, Masterclass lessons are 100-113. That is
   why a learner can hold progress on both tracks in a single array with no change to the Firestore
@@ -157,6 +160,6 @@ NOTES
 - The admin console scores each learner against the track they have actually progressed furthest
   in, and shows a per-track breakdown in the learner sheet when they have worked on both.
 - Learners store name, phone, goal and progress. Keep the consent line and only use the data for the training.
-- To update later change v12 to v13 in sw.js and upload again. Do this every time you edit
+- To update later change v13 to v14 in sw.js and upload again. Do this every time you edit
   index.html, join.html, admin.html or styles.css, otherwise phones keep the old cached copy.
 - Not built yet: certificates, audio/video downloads, assignments, attendance QR.
