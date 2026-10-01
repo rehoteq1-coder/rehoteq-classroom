@@ -87,6 +87,13 @@ service cloud.firestore {
   }
 }
 
+HOW TEACHERS REACH THE CONSOLE
+There is a small "Teacher" tab in the top-right corner of the banner on join.html.
+It goes to admin.html. The console is still login-protected and the Firestore rules
+still decide who may read the data, so the tab being visible gives nothing away -
+a learner who taps it sees a login card with a "Back to the classroom" link.
+You can also still type YOUR-LINK/admin.html directly.
+
 STEP 2: MAKE YOURSELF ADMIN (once)
 1. Sign up in the classroom with your teacher email and finish the onboarding form.
 2. Firebase > Authentication > Users: copy your User UID.
@@ -96,7 +103,7 @@ STEP 2: MAKE YOURSELF ADMIN (once)
 STEP 3: UPLOAD all files to GitHub (replace old ones):
 index.html, join.html, admin.html, styles.css, sw.js, manifest.json, icon-192.png,
 icon-512.png, README.txt (optional). styles.css is NEW - the pages are unstyled without it.
-sw.js is now v9 and caches styles.css too.
+sw.js is now v10 and caches styles.css too.
 
 STEP 4: REVIEW CHECKLIST
 [ ] Open twice online, then airplane mode: still opens, badge "saved for offline"
@@ -114,6 +121,8 @@ STEP 4: REVIEW CHECKLIST
 [ ] Two different accounts on one phone: second account does not see the first one's progress
 [ ] admin.html: learner search, results filter, both CSV exports open in Excel
 [ ] A normal learner cannot open admin.html data ("not an admin")
+[ ] The small "Teacher" tab on join.html opens the console, and "Back to the
+    classroom" on the login card returns a learner who tapped it by mistake
 [ ] Dark mode and a small screen look right
 [ ] Theme button in the header cycles auto > light > dark and survives a refresh
 [ ] Lab steps stay ticked after you leave a lesson and come back
@@ -125,6 +134,6 @@ NOTES
 - Firebase web config is public by design; the rules protect the data.
 - Masterclass learners see a "lessons being added" note. Only Beginner content exists.
 - Learners store name, phone, goal and progress. Keep the consent line and only use the data for the training.
-- To update later change v9 to v10 in sw.js and upload again. Do this every time you edit
+- To update later change v10 to v11 in sw.js and upload again. Do this every time you edit
   index.html, join.html, admin.html or styles.css, otherwise phones keep the old cached copy.
 - Not built yet: certificates, Masterclass lessons, audio/video downloads, assignments, attendance QR.

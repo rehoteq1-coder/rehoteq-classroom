@@ -27,6 +27,18 @@
     border-radius:50%;border:1px solid rgba(255,255,255,.12);
   }
   .banner>*{position:relative}
+  /* Discreet teacher entrance. Visible enough to find, quiet enough to ignore. */
+  .banner>.teacher-tab{
+    position:absolute;top:calc(10px + var(--safe-t));right:12px;
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:11px;font-weight:750;letter-spacing:.09em;text-transform:uppercase;
+    color:rgba(232,246,238,.88);text-decoration:none;
+    background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
+    padding:6px 12px;border-radius:999px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    transition:background var(--t-fast),color var(--t-fast),transform var(--t-fast);
+  }
+  .banner>.teacher-tab:hover{background:rgba(255,255,255,.24);color:#fff;transform:translateY(-1px)}
+  .banner>.teacher-tab:active{transform:translateY(0)}
   .banner .mark{
     width:54px;height:54px;border-radius:17px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.22);
     display:inline-grid;place-items:center;font-weight:800;font-size:24px;margin-bottom:12px;backdrop-filter:blur(6px);
@@ -47,6 +59,7 @@
 <body>
 
 <header class="banner">
+  <a class="teacher-tab" href="admin.html" title="Teacher console (staff only)">Teacher</a>
   <span class="mark">R</span>
   <h1>Start your training</h1>
   <p id="bannersub">Three quick questions. Your dashboard is ready at the end.</p>

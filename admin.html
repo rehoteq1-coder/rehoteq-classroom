@@ -213,8 +213,9 @@ function loginView(){
         h("label", { class: "field" }, h("span", { class: "lbl", text: "Email" }), email),
         h("label", { class: "field" }, h("span", { class: "lbl", text: "Password" }), pass),
         err, go,
+        h("a", { class: "btn quiet block", style: "margin-top:8px", href: "./" }, "← Back to the classroom"),
         h("p", { class: "faint", style: "margin:14px 0 0;text-align:center",
-          text: "Your account must be listed in the admins collection." })),
+          text: "Staff only. Your account must be listed in the admins collection." })),
       h("p", { class: "faint center", text: "Rehoteq Technologies · Okitipupa, Ondo State" }))));
 }
 
